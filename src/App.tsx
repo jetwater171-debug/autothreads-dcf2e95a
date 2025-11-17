@@ -9,6 +9,7 @@ import AccountsOAuth from "./pages/AccountsOAuth";
 import ThreadsCallback from "./pages/ThreadsCallback";
 import Phrases from "./pages/Phrases";
 import PeriodicPosts from "./pages/PeriodicPosts";
+import ManualPost from "./pages/ManualPost";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/accounts" element={<AccountsOAuth />} />
           <Route path="/phrases" element={<Phrases />} />
           <Route path="/periodic-posts" element={<PeriodicPosts />} />
+          <Route path="/manual-post" element={<ManualPost />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
