@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
 
     const tokenData = await tokenResponse.json();
     const shortLivedToken = tokenData.access_token;
-    const userId = tokenData.user_id;
+    const userId = String(tokenData.user_id); // Converter para string para evitar perda de precisão
 
     console.log('Token de curta duração obtido, trocando por token de longa duração...');
 
