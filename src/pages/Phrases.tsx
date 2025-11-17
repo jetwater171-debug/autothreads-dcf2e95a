@@ -132,10 +132,12 @@ const Phrases = () => {
     setOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpen(false);
-    setEditingPhrase(null);
-    setContent("");
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setEditingPhrase(null);
+      setContent("");
+    }
   };
 
   return (
@@ -148,7 +150,7 @@ const Phrases = () => {
               Gerencie as frases para seus posts automáticos
             </p>
           </div>
-          <Dialog open={open} onOpenChange={handleCloseDialog}>
+          <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
