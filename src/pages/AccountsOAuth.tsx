@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ThreadsAccount {
@@ -19,7 +19,7 @@ interface ThreadsAccount {
   connected_at: string;
 }
 
-const Accounts = () => {
+const AccountsOAuth = () => {
   const [accounts, setAccounts] = useState<ThreadsAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -61,6 +61,25 @@ const Accounts = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOAuthConnect = () => {
+    const threadsAppId = import.meta.env.VITE_THREADS_APP_ID;
+    const threadsRedirectUri = import.meta.env.VITE_THREADS_REDIRECT_URI || 
+      `${window.location.origin}/auth/threads/callback`;
+    const scope = "threads_basic,threads_content_publish";
+
+    if (!threadsAppId) {
+      toast({
+        variant: "destructive",
+        title: "Erro de configuração",
+        description: "ID do aplicativo Threads não configurado.",
+      });
+      return;
+    }
+
+    const authUrl = `https://threads.net/oauth/authorize?client_id=${threadsAppId}&redirect_uri=${encodeURIComponent(threadsRedirectUri)}&scope=${scope}&response_type=code`;
+    window.location.href = authUrl;
   };
 
   const handleAddManual = async (e: React.FormEvent) => {
@@ -143,44 +162,68 @@ const Accounts = () => {
               <DialogHeader>
                 <DialogTitle>Conectar Conta do Threads</DialogTitle>
                 <DialogDescription>
-                  Conecte sua conta manualmente fornecendo as credenciais
+                  Escolha como deseja conectar sua conta
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleAddManual} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="account-id">ID da Conta</Label>
-                  <Input
-                    id="account-id"
-                    value={accountId}
-                    onChange={(e) => setAccountId(e.target.value)}
-                    required
-                    placeholder="Ex: 123456789"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="access-token">Token de Acesso</Label>
-                  <Input
-                    id="access-token"
-                    type="password"
-                    value={accessToken}
-                    onChange={(e) => setAccessToken(e.target.value)}
-                    required
-                    placeholder="Seu token de acesso"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username (opcional)</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="@seunome"
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  Conectar Conta
-                </Button>
-              </form>
+              <Tabs defaultValue="oauth" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="oauth">OAuth (Recomendado)</TabsTrigger>
+                  <TabsTrigger value="manual">Manual</TabsTrigger>
+                </TabsList>
+                <TabsContent value="oauth" className="space-y-4">
+                  <div className="space-y-4 py-4">
+                    <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-lg">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Conexão Segura</p>
+                        <p className="text-xs text-muted-foreground">
+                          Conecte sua conta de forma segura através do OAuth do Threads
+                        </p>
+                      </div>
+                    </div>
+                    <Button onClick={handleOAuthConnect} className="w-full">
+                      Conectar com Threads
+                    </Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="manual">
+                  <form onSubmit={handleAddManual} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="account-id">ID da Conta</Label>
+                      <Input
+                        id="account-id"
+                        value={accountId}
+                        onChange={(e) => setAccountId(e.target.value)}
+                        required
+                        placeholder="Ex: 123456789"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="access-token">Token de Acesso</Label>
+                      <Input
+                        id="access-token"
+                        type="password"
+                        value={accessToken}
+                        onChange={(e) => setAccessToken(e.target.value)}
+                        required
+                        placeholder="Seu token de acesso"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username (opcional)</Label>
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="@seunome"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full">
+                      Conectar Conta
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>
@@ -239,4 +282,4 @@ const Accounts = () => {
   );
 };
 
-export default Accounts;
+export default AccountsOAuth;
