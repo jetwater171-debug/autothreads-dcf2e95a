@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -28,6 +28,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: "/accounts", label: "Contas", icon: Sparkles },
     { path: "/phrases", label: "Frases", icon: MessageSquare },
     { path: "/periodic-posts", label: "Posts Periódicos", icon: Calendar },
+    { path: "/manual-post", label: "Post Manual", icon: Send },
   ];
 
   return (
