@@ -50,7 +50,13 @@ Deno.serve(async (req) => {
 
     const tokenData = await tokenResponse.json();
     const shortLivedToken = tokenData.access_token;
+    
+    // Log detalhado para debug
+    console.log('ID retornado pela API do Threads:', tokenData.user_id);
+    console.log('Tipo do ID:', typeof tokenData.user_id);
+    
     const userId = String(tokenData.user_id); // Armazenar ID original como string
+    console.log('ID que será armazenado:', userId);
 
     console.log('Token de curta duração obtido, trocando por token de longa duração...');
 
