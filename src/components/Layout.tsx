@@ -34,37 +34,62 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-card">
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-8">
-            <Sparkles className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold">Threads Auto</h1>
+      <aside className="w-64 border-r border-border bg-card relative overflow-hidden animate-slide-in-left">
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="p-6 relative z-10">
+          <div className="flex items-center gap-3 mb-8 group">
+            <div className="relative">
+              <Sparkles className="h-7 w-7 text-primary animate-glow" />
+              <div className="absolute inset-0 blur-xl bg-primary/20 group-hover:bg-primary/30 transition-all duration-300" />
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Threads Auto
+            </h1>
           </div>
-          <nav className="space-y-2">
-            {navItems.map((item) => {
+          
+          <nav className="space-y-1">
+            {navItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
-                <Link key={item.path} to={item.path}>
+                <Link 
+                  key={item.path} 
+                  to={item.path}
+                  style={{
+                    animationDelay: `${index * 0.1}s`
+                  }}
+                  className="block animate-fade-in"
+                >
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start",
-                      isActive && "bg-secondary text-secondary-foreground"
+                      "w-full justify-start relative overflow-hidden transition-all duration-300",
+                      "hover:bg-primary/10 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/10",
+                      "group",
+                      isActive && "bg-primary/20 text-primary font-medium border border-primary/30 shadow-md shadow-primary/20"
                     )}
                   >
-                    <Icon className="mr-2 h-4 w-4" />
-                    {item.label}
+                    <Icon className={cn(
+                      "mr-3 h-4 w-4 transition-transform duration-300 group-hover:scale-110",
+                      isActive && "text-primary"
+                    )} />
+                    <span className="relative z-10">{item.label}</span>
+                    {isActive && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent" />
+                    )}
                   </Button>
                 </Link>
               );
             })}
           </nav>
         </div>
-        <div className="absolute bottom-6 left-6 right-6">
+        
+        <div className="absolute bottom-6 left-6 right-6 z-10">
           <Button
             variant="ghost"
-            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-300 hover:shadow-lg hover:shadow-destructive/10"
             onClick={handleLogout}
           >
             <LogOut className="mr-2 h-4 w-4" />
@@ -74,8 +99,8 @@ const Layout = ({ children }: LayoutProps) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto p-8">{children}</div>
+      <main className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="container mx-auto p-8 animate-fade-in">{children}</div>
       </main>
     </div>
   );
