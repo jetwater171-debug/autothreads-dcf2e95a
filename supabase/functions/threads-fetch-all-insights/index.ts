@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       try {
         console.log(`Buscando insights para: ${account.username || account.account_id}`);
 
-        // Métricas válidas segundo a API (inclui followers_count)
+        // Métricas válidas segundo a API
         const metricsToFetch = [
           'followers_count',
           'views',

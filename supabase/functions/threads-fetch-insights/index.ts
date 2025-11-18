@@ -56,7 +56,8 @@ Deno.serve(async (req) => {
 
     console.log('Buscando insights da API do Threads para:', account.username);
 
-    // Buscar insights do usuário da API do Threads, incluindo followers_count
+    // Buscar insights do usuário da API do Threads
+    // Métricas válidas segundo a API: likes, replies, followers_count, follower_demographics, reposts, views, quotes, clicks
     const metricsToFetch = [
       'followers_count',
       'views',
@@ -93,7 +94,7 @@ Deno.serve(async (req) => {
         const metricName = metric.name;
         
         // A API do Threads pode retornar métricas em diferentes formatos:
-        // - total_value.value para métricas agregadas
+        // - total_value.value para métricas agregadas (como followers_count)
         // - values[0].value para séries temporais
         let metricValue = 0;
         if (metric.total_value?.value !== undefined) {
