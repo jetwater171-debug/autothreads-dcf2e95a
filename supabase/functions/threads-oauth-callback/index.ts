@@ -52,20 +52,9 @@ Deno.serve(async (req) => {
     const tokenText = await tokenResponse.text();
     console.log('Resposta bruta da API:', tokenText);
     
-    // Fazer parse manual para garantir que user_id seja string
-    const tokenData = JSON.parse(tokenText, (key, value) => {
-      // Manter user_id como string para evitar perda de precisão
-      if (key === 'user_id' && typeof value === 'number') {
-        return value.toString();
-      }
-      return value;
-    });
-    
+    const tokenData = JSON.parse(tokenText);
     const shortLivedToken = tokenData.access_token;
-    const userId = tokenData.user_id; // Já é string agora
     
-    console.log('ID retornado pela API do Threads:', userId);
-    console.log('Tipo do ID:', typeof userId);
     console.log('Token de curta duração obtido, trocando por token de longa duração...');
 
     // Trocar token de curta duração por token de longa duração
@@ -88,7 +77,27 @@ Deno.serve(async (req) => {
     const longLivedData = await longLivedResponse.json();
     const longLivedToken = longLivedData.access_token;
 
-    console.log('Token de longa duração obtido, buscando informações do perfil...');
+    console.log('Token de longa duração obtido, buscando ID correto do usuário...');
+
+    // Buscar ID correto do usuário usando me?fields=id
+    const meResponse = await fetch(
+      `https://graph.threads.net/v1.0/me?fields=id&access_token=${longLivedToken}`,
+      {
+        method: 'GET',
+      }
+    );
+
+    if (!meResponse.ok) {
+      const errorText = await meResponse.text();
+      console.error('Erro ao buscar ID do usuário:', errorText);
+      throw new Error(`Erro ao buscar ID: ${errorText}`);
+    }
+
+    const meData = await meResponse.json();
+    const userId = String(meData.id); // ID correto como string
+    
+    console.log('ID correto obtido:', userId);
+    console.log('Buscando informações do perfil...');
 
     // Buscar informações do perfil
     const profileResponse = await fetch(
