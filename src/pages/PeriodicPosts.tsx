@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface PeriodicPost {
   id: string;
@@ -32,6 +33,7 @@ interface ThreadsAccount {
   id: string;
   username: string | null;
   account_id: string;
+  profile_picture_url: string | null;
 }
 
 interface Phrase {
@@ -92,7 +94,7 @@ const PeriodicPosts = () => {
     try {
       const { data, error } = await supabase
         .from("threads_accounts")
-        .select("id, username, account_id")
+        .select("id, username, account_id, profile_picture_url")
         .eq("is_active", true);
 
       if (error) throw error;
@@ -240,7 +242,13 @@ const PeriodicPosts = () => {
                     <SelectContent>
                       {accounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
-                          {account.username || account.account_id}
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={account.profile_picture_url || undefined} alt={account.username || "Profile"} />
+                              <AvatarFallback>{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
+                            </Avatar>
+                            {account.username || account.account_id}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>

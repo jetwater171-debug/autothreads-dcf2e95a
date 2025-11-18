@@ -9,11 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ThreadsAccount {
   id: string;
   account_id: string;
   username: string | null;
+  profile_picture_url: string | null;
 }
 
 const ManualPost = () => {
@@ -41,7 +43,7 @@ const ManualPost = () => {
     try {
       const { data, error } = await supabase
         .from("threads_accounts")
-        .select("id, username, account_id")
+        .select("id, username, account_id, profile_picture_url")
         .eq("is_active", true);
 
       if (error) throw error;
@@ -127,7 +129,13 @@ const ManualPost = () => {
                 <SelectContent>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
-                      {account.username || account.account_id}
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={account.profile_picture_url || undefined} alt={account.username || "Profile"} />
+                          <AvatarFallback>{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
+                        </Avatar>
+                        {account.username || account.account_id}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
