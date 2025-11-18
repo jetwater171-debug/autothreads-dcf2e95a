@@ -92,7 +92,16 @@ Deno.serve(async (req) => {
     if (insightsData.data && Array.isArray(insightsData.data)) {
       for (const metric of insightsData.data) {
         const metricName = metric.name;
-        const metricValue = metric.values?.[0]?.value || 0;
+        
+        // A API do Threads pode retornar métricas em diferentes formatos:
+        // - total_value.value para métricas agregadas (como followers_count)
+        // - values[0].value para séries temporais
+        let metricValue = 0;
+        if (metric.total_value?.value !== undefined) {
+          metricValue = metric.total_value.value;
+        } else if (metric.values && Array.isArray(metric.values) && metric.values.length > 0) {
+          metricValue = metric.values[0].value || 0;
+        }
         
         switch (metricName) {
           case 'followers_count':
@@ -114,7 +123,6 @@ Deno.serve(async (req) => {
             insights.quotes = metricValue;
             break;
           case 'clicks':
-            // Clicks não tem coluna própria, mas podemos armazenar em engaged_audience como aproximação
             insights.engaged_audience = metricValue;
             break;
         }
