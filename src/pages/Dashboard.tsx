@@ -138,7 +138,7 @@ const Dashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-3xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                  <div className="text-3xl font-bold text-primary">
                     {stat.value}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -196,10 +196,10 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm animate-fade-in-delayed overflow-hidden">
+        <Card className="border-border/50 bg-card backdrop-blur-sm animate-fade-in-delayed overflow-hidden">
           <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-32 -translate-x-32" />
           <CardHeader className="relative">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <MessageSquare className="h-5 w-5 text-primary" />
               Histórico de Posts
             </CardTitle>
