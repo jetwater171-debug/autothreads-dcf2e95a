@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
         console.log(`Buscando dados para: ${account.username || account.account_id}`);
 
         // 1. Buscar o número de seguidores atuais da conta usando a API do Threads
-        const profileUrl = `https://graph.threads.net/v1.0/${account.account_id}?fields=followers_count&access_token=${account.access_token}`;
+        const profileUrl = `https://graph.threads.net/v1.0/${account.account_id}?fields=follower_count&access_token=${account.access_token}`;
         
         const profileResponse = await fetch(profileUrl, {
           method: 'GET',
@@ -93,8 +93,8 @@ Deno.serve(async (req) => {
         const insights: any = {
           user_id: account.user_id,
           account_id: account.id,
-          // Usar o followers_count do perfil (atual)
-          followers_count: profileData.followers_count || 0,
+          // Usar o follower_count do perfil (atual) - campo correto da API
+          followers_count: profileData.follower_count || 0,
         };
 
         if (insightsData.data && Array.isArray(insightsData.data)) {
