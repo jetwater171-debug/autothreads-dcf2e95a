@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown, Users, Eye, Heart, MessageCircle, Repeat2, Loader2, RefreshCw, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, Eye, Heart, MessageCircle, Repeat2, Loader2, RefreshCw, ArrowUp, ArrowDown, Minus, MessageSquare, Quote } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -150,6 +150,7 @@ const Analytics = () => {
       curtidas: insight.likes || 0,
       respostas: insight.replies || 0,
       reposts: insight.reposts || 0,
+      citacoes: insight.quotes || 0,
       engajamento: insight.engaged_audience || 0,
     }));
   };
@@ -275,7 +276,7 @@ const Analytics = () => {
 
         {latestInsight && (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
               <Card className="hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Seguidores</CardTitle>
@@ -363,6 +364,72 @@ const Analytics = () => {
                   )}
                 </CardContent>
               </Card>
+
+              <Card className="hover-scale">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Respostas</CardTitle>
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.replies?.toLocaleString() || 0}</div>
+                  {calculateGrowth('replies').value && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
+                      {renderTrendIcon(calculateGrowth('replies').trend)}
+                      <span className={cn(
+                        calculateGrowth('replies').trend === 'up' && 'text-green-500',
+                        calculateGrowth('replies').trend === 'down' && 'text-red-500'
+                      )}>
+                        {calculateGrowth('replies').value}%
+                      </span>
+                      {' '}desde última atualização
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="hover-scale">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Reposts</CardTitle>
+                  <Repeat2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.reposts?.toLocaleString() || 0}</div>
+                  {calculateGrowth('reposts').value && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
+                      {renderTrendIcon(calculateGrowth('reposts').trend)}
+                      <span className={cn(
+                        calculateGrowth('reposts').trend === 'up' && 'text-green-500',
+                        calculateGrowth('reposts').trend === 'down' && 'text-red-500'
+                      )}>
+                        {calculateGrowth('reposts').value}%
+                      </span>
+                      {' '}desde última atualização
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="hover-scale">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Citações</CardTitle>
+                  <Quote className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.quotes?.toLocaleString() || 0}</div>
+                  {calculateGrowth('quotes').value && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
+                      {renderTrendIcon(calculateGrowth('quotes').trend)}
+                      <span className={cn(
+                        calculateGrowth('quotes').trend === 'up' && 'text-green-500',
+                        calculateGrowth('quotes').trend === 'down' && 'text-red-500'
+                      )}>
+                        {calculateGrowth('quotes').value}%
+                      </span>
+                      {' '}desde última atualização
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
             {chartData.length > 1 && (
@@ -434,6 +501,7 @@ const Analytics = () => {
                         <Line type="monotone" dataKey="curtidas" stroke="hsl(var(--primary))" strokeWidth={2} name="Curtidas" />
                         <Line type="monotone" dataKey="respostas" stroke="#10b981" strokeWidth={2} name="Respostas" />
                         <Line type="monotone" dataKey="reposts" stroke="#8b5cf6" strokeWidth={2} name="Reposts" />
+                        <Line type="monotone" dataKey="citacoes" stroke="#f59e0b" strokeWidth={2} name="Citações" />
                       </LineChart>
                     </ResponsiveContainer>
                   </CardContent>
