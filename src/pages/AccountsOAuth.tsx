@@ -10,11 +10,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, CheckCircle, XCircle, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ThreadsAccount {
   id: string;
   account_id: string;
   username: string | null;
+  profile_picture_url: string | null;
   is_active: boolean;
   connected_at: string;
 }
@@ -233,9 +235,15 @@ const AccountsOAuth = () => {
             <Card key={account.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    {account.username || "Conta Threads"}
-                  </CardTitle>
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarImage src={account.profile_picture_url || undefined} alt={account.username || "Profile"} />
+                      <AvatarFallback>{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
+                    </Avatar>
+                    <CardTitle className="text-lg">
+                      {account.username || "Conta Threads"}
+                    </CardTitle>
+                  </div>
                   {account.is_active ? (
                     <CheckCircle className="h-5 w-5 text-success" />
                   ) : (

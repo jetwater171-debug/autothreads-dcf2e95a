@@ -85,10 +85,13 @@ Deno.serve(async (req) => {
     );
 
     let username = null;
+    let profilePictureUrl = null;
     if (profileResponse.ok) {
       const profileData = await profileResponse.json();
       username = profileData.username;
+      profilePictureUrl = profileData.threads_profile_picture_url;
       console.log('Username obtido:', username);
+      console.log('Profile picture URL obtida:', profilePictureUrl);
     }
 
     // Obter usuário autenticado
@@ -132,6 +135,7 @@ Deno.serve(async (req) => {
         .update({
           access_token: longLivedToken,
           username,
+          profile_picture_url: profilePictureUrl,
           is_active: true,
         })
         .eq('id', existingAccount.id);
@@ -146,6 +150,7 @@ Deno.serve(async (req) => {
           account_id: userId,
           access_token: longLivedToken,
           username,
+          profile_picture_url: profilePictureUrl,
         });
 
       if (insertError) throw insertError;
