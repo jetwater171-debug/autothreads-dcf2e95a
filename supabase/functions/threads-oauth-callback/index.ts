@@ -48,16 +48,24 @@ Deno.serve(async (req) => {
       throw new Error(`Erro ao obter token: ${errorText}`);
     }
 
-    const tokenData = await tokenResponse.json();
+    // Receber resposta como texto primeiro para evitar perda de precisão em números grandes
+    const tokenText = await tokenResponse.text();
+    console.log('Resposta bruta da API:', tokenText);
+    
+    // Fazer parse manual para garantir que user_id seja string
+    const tokenData = JSON.parse(tokenText, (key, value) => {
+      // Manter user_id como string para evitar perda de precisão
+      if (key === 'user_id' && typeof value === 'number') {
+        return value.toString();
+      }
+      return value;
+    });
+    
     const shortLivedToken = tokenData.access_token;
+    const userId = tokenData.user_id; // Já é string agora
     
-    // Log detalhado para debug
-    console.log('ID retornado pela API do Threads:', tokenData.user_id);
-    console.log('Tipo do ID:', typeof tokenData.user_id);
-    
-    const userId = String(tokenData.user_id); // Armazenar ID original como string
-    console.log('ID que será armazenado:', userId);
-
+    console.log('ID retornado pela API do Threads:', userId);
+    console.log('Tipo do ID:', typeof userId);
     console.log('Token de curta duração obtido, trocando por token de longa duração...');
 
     // Trocar token de curta duração por token de longa duração
