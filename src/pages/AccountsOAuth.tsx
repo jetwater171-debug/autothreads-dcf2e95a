@@ -69,7 +69,7 @@ const AccountsOAuth = () => {
     const threadsAppId = import.meta.env.VITE_THREADS_APP_ID;
     const threadsRedirectUri = import.meta.env.VITE_THREADS_REDIRECT_URI || 
       `${window.location.origin}/auth/threads/callback`;
-    const scope = "threads_basic,threads_content_publish";
+    const scope = "threads_basic,threads_content_publish,threads_manage_insights";
 
     if (!threadsAppId) {
       toast({

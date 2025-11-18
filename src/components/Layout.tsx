@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useEffect, useState } from "react";
@@ -62,6 +62,10 @@ const Layout = ({
     path: "/manual-post",
     label: "Post Manual",
     icon: Send
+  }, {
+    path: "/analytics",
+    label: "Analytics",
+    icon: TrendingUp
   }];
   return <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
