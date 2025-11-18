@@ -276,7 +276,7 @@ const Analytics = () => {
 
         {latestInsight && (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card className="hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Seguidores</CardTitle>
@@ -345,50 +345,6 @@ const Analytics = () => {
 
               <Card className="hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Engajamento</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.engaged_audience?.toLocaleString() || 0}</div>
-                  {calculateGrowth('engaged_audience').value && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
-                      {renderTrendIcon(calculateGrowth('engaged_audience').trend)}
-                      <span className={cn(
-                        calculateGrowth('engaged_audience').trend === 'up' && 'text-green-500',
-                        calculateGrowth('engaged_audience').trend === 'down' && 'text-red-500'
-                      )}>
-                        {calculateGrowth('engaged_audience').value}%
-                      </span>
-                      {' '}desde última atualização
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="hover-scale">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Respostas</CardTitle>
-                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.replies?.toLocaleString() || 0}</div>
-                  {calculateGrowth('replies').value && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
-                      {renderTrendIcon(calculateGrowth('replies').trend)}
-                      <span className={cn(
-                        calculateGrowth('replies').trend === 'up' && 'text-green-500',
-                        calculateGrowth('replies').trend === 'down' && 'text-red-500'
-                      )}>
-                        {calculateGrowth('replies').value}%
-                      </span>
-                      {' '}desde última atualização
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="hover-scale">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Reposts</CardTitle>
                   <Repeat2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
@@ -402,28 +358,6 @@ const Analytics = () => {
                         calculateGrowth('reposts').trend === 'down' && 'text-red-500'
                       )}>
                         {calculateGrowth('reposts').value}%
-                      </span>
-                      {' '}desde última atualização
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="hover-scale">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Citações</CardTitle>
-                  <Quote className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.quotes?.toLocaleString() || 0}</div>
-                  {calculateGrowth('quotes').value && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
-                      {renderTrendIcon(calculateGrowth('quotes').trend)}
-                      <span className={cn(
-                        calculateGrowth('quotes').trend === 'up' && 'text-green-500',
-                        calculateGrowth('quotes').trend === 'down' && 'text-red-500'
-                      )}>
-                        {calculateGrowth('quotes').value}%
                       </span>
                       {' '}desde última atualização
                     </p>
