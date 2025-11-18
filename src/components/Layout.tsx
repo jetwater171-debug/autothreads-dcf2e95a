@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.png";
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -51,7 +53,9 @@ const Layout = ({
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
         
         <div className="p-6 relative z-10">
-          
+          <div className="mb-8 flex items-center justify-center">
+            <img src={logo} alt="Auto Threads" className="h-16 w-auto object-contain" />
+          </div>
           
           <nav className="space-y-1">
             {navItems.map((item, index) => {
