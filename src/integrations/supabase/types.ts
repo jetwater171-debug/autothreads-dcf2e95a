@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_insights: {
+        Row: {
+          account_id: string
+          collected_at: string
+          created_at: string
+          engaged_audience: number | null
+          followers_count: number | null
+          id: string
+          likes: number | null
+          quotes: number | null
+          replies: number | null
+          reposts: number | null
+          shares: number | null
+          user_id: string
+          views: number | null
+        }
+        Insert: {
+          account_id: string
+          collected_at?: string
+          created_at?: string
+          engaged_audience?: number | null
+          followers_count?: number | null
+          id?: string
+          likes?: number | null
+          quotes?: number | null
+          replies?: number | null
+          reposts?: number | null
+          shares?: number | null
+          user_id: string
+          views?: number | null
+        }
+        Update: {
+          account_id?: string
+          collected_at?: string
+          created_at?: string
+          engaged_audience?: number | null
+          followers_count?: number | null
+          id?: string
+          likes?: number | null
+          quotes?: number | null
+          replies?: number | null
+          reposts?: number | null
+          shares?: number | null
+          user_id?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_insights_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "threads_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       periodic_posts: {
         Row: {
           account_id: string
