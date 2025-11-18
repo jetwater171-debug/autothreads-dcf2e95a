@@ -172,8 +172,9 @@ const Analytics = () => {
   const filteredInsights = filterInsightsByPeriod(insights);
 
   const formatChartData = () => {
+    const dateFormat = timePeriod === "today" ? "HH:mm" : "dd/MM";
     return filteredInsights.map((insight) => ({
-      date: format(new Date(insight.collected_at), "dd/MM"),
+      date: format(new Date(insight.collected_at), dateFormat),
       seguidores: insight.followers_count || 0,
       visualizacoes: insight.views || 0,
       curtidas: insight.likes || 0,
