@@ -54,12 +54,26 @@ Deno.serve(async (req) => {
       throw new Error('Conta não encontrada');
     }
 
-    console.log('Buscando insights da API do Threads para:', account.username);
+    console.log('Buscando dados da API do Threads para:', account.username);
 
-    // Buscar insights do usuário da API do Threads
-    // Métricas válidas segundo a API: likes, replies, followers_count, follower_demographics, reposts, views, quotes, clicks
+    // 1. Buscar o número de seguidores atuais da conta usando a API do Threads
+    const profileUrl = `https://graph.threads.net/v1.0/${account.account_id}?fields=followers_count&access_token=${account.access_token}`;
+    
+    const profileResponse = await fetch(profileUrl, {
+      method: 'GET',
+    });
+
+    if (!profileResponse.ok) {
+      const errorText = await profileResponse.text();
+      console.error('Erro ao buscar perfil:', errorText);
+      throw new Error(`Erro ao buscar perfil: ${errorText}`);
+    }
+
+    const profileData = await profileResponse.json();
+    console.log('Perfil obtido:', JSON.stringify(profileData));
+
+    // 2. Buscar insights do usuário da API do Threads (sem followers_count)
     const metricsToFetch = [
-      'followers_count',
       'views',
       'likes',
       'replies',
@@ -87,6 +101,8 @@ Deno.serve(async (req) => {
     const insights: any = {
       user_id: user.id,
       account_id: accountId,
+      // Usar o followers_count do perfil (atual)
+      followers_count: profileData.followers_count || 0,
     };
 
     if (insightsData.data && Array.isArray(insightsData.data)) {
@@ -94,7 +110,7 @@ Deno.serve(async (req) => {
         const metricName = metric.name;
         
         // A API do Threads pode retornar métricas em diferentes formatos:
-        // - total_value.value para métricas agregadas (como followers_count)
+        // - total_value.value para métricas agregadas
         // - values[0].value para séries temporais
         let metricValue = 0;
         if (metric.total_value?.value !== undefined) {
@@ -104,9 +120,6 @@ Deno.serve(async (req) => {
         }
         
         switch (metricName) {
-          case 'followers_count':
-            insights.followers_count = metricValue;
-            break;
           case 'views':
             insights.views = metricValue;
             break;
