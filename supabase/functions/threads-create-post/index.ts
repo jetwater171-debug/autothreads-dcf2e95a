@@ -79,10 +79,10 @@ Deno.serve(async (req) => {
     const creationId = createData.id;
 
     console.log('Post criado com ID:', creationId);
-    console.log('Aguardando 10 segundos para processar container...');
+    console.log('Aguardando 3 segundos para processar container...');
     
-    // Delay de 10 segundos para a API processar o container
-    await sleep(10000);
+    // Delay de 3 segundos para a API processar o container
+    await sleep(3000);
     
     console.log('Publicando post...');
 
