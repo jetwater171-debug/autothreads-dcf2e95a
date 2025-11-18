@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown, Users, Eye, Heart, MessageCircle, Repeat2, Loader2, RefreshCw, ArrowUp, ArrowDown, Minus, MessageSquare, Quote } from "lucide-react";
-import { format } from "date-fns";
+import { TrendingUp, TrendingDown, Users, Eye, Heart, MessageCircle, Repeat2, Loader2, RefreshCw, ArrowUp, ArrowDown, Minus, MessageSquare, Quote, Calendar } from "lucide-react";
+import { format, subDays, startOfDay, endOfDay, isWithinInterval } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ThreadsAccount {
   id: string;
@@ -31,13 +32,17 @@ interface Insight {
   collected_at: string;
 }
 
+type TimeFilter = 'today' | '7days' | '30days' | '90days' | 'all';
+
 const Analytics = () => {
   const [accounts, setAccounts] = useState<ThreadsAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState("");
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [filteredInsights, setFilteredInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [latestInsight, setLatestInsight] = useState<Insight | null>(null);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -59,6 +64,44 @@ const Analytics = () => {
       loadInsights();
     }
   }, [selectedAccount]);
+
+  useEffect(() => {
+    filterInsightsByTime();
+  }, [insights, timeFilter]);
+
+  const filterInsightsByTime = () => {
+    if (timeFilter === 'all') {
+      setFilteredInsights(insights);
+      return;
+    }
+
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timeFilter) {
+      case 'today':
+        startDate = startOfDay(now);
+        break;
+      case '7days':
+        startDate = subDays(now, 7);
+        break;
+      case '30days':
+        startDate = subDays(now, 30);
+        break;
+      case '90days':
+        startDate = subDays(now, 90);
+        break;
+      default:
+        startDate = new Date(0);
+    }
+
+    const filtered = insights.filter(insight => {
+      const insightDate = new Date(insight.collected_at);
+      return isWithinInterval(insightDate, { start: startDate, end: now });
+    });
+
+    setFilteredInsights(filtered);
+  };
 
   const loadAccounts = async () => {
     try {
@@ -143,8 +186,8 @@ const Analytics = () => {
   };
 
   const formatChartData = () => {
-    return insights.map((insight) => ({
-      date: format(new Date(insight.collected_at), "dd/MM"),
+    return filteredInsights.map((insight) => ({
+      date: format(new Date(insight.collected_at), "dd/MM HH:mm"),
       seguidores: insight.followers_count || 0,
       visualizacoes: insight.views || 0,
       curtidas: insight.likes || 0,
@@ -156,10 +199,10 @@ const Analytics = () => {
   };
 
   const calculateGrowth = (metric: keyof Insight): { value: string | null; trend: 'up' | 'down' | 'neutral' } => {
-    if (insights.length < 2) return { value: null, trend: 'neutral' };
+    if (filteredInsights.length < 2) return { value: null, trend: 'neutral' };
     
-    const latest = insights[insights.length - 1][metric] || 0;
-    const previous = insights[insights.length - 2][metric] || 0;
+    const latest = filteredInsights[filteredInsights.length - 1][metric] || 0;
+    const previous = filteredInsights[filteredInsights.length - 2][metric] || 0;
     
     if (previous === 0) return { value: null, trend: 'neutral' };
     
@@ -244,6 +287,33 @@ const Analytics = () => {
             Atualizar Dados
           </Button>
         </div>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  Filtro de Período
+                </CardTitle>
+                <CardDescription>
+                  Escolha o período para análise dos dados
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={timeFilter} onValueChange={(value) => setTimeFilter(value as TimeFilter)}>
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="today">Hoje</TabsTrigger>
+                <TabsTrigger value="7days">7 dias</TabsTrigger>
+                <TabsTrigger value="30days">30 dias</TabsTrigger>
+                <TabsTrigger value="90days">90 dias</TabsTrigger>
+                <TabsTrigger value="all">Tudo</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
