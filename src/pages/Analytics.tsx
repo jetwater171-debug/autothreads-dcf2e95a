@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, Users, Eye, Heart, MessageCircle, Repeat2, Share2, Loader2, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, Eye, Heart, MessageCircle, Repeat2, Loader2, RefreshCw, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface ThreadsAccount {
   id: string;
@@ -153,16 +154,27 @@ const Analytics = () => {
     }));
   };
 
-  const calculateGrowth = (metric: keyof Insight) => {
-    if (insights.length < 2) return null;
+  const calculateGrowth = (metric: keyof Insight): { value: string | null; trend: 'up' | 'down' | 'neutral' } => {
+    if (insights.length < 2) return { value: null, trend: 'neutral' };
     
     const latest = insights[insights.length - 1][metric] || 0;
     const previous = insights[insights.length - 2][metric] || 0;
     
-    if (previous === 0) return null;
+    if (previous === 0) return { value: null, trend: 'neutral' };
     
     const growth = ((Number(latest) - Number(previous)) / Number(previous)) * 100;
-    return growth.toFixed(1);
+    const trend: 'up' | 'down' | 'neutral' = growth > 0 ? 'up' : growth < 0 ? 'down' : 'neutral';
+    
+    return { value: growth.toFixed(1), trend };
+  };
+
+  const renderTrendIcon = (trend: 'up' | 'down' | 'neutral') => {
+    if (trend === 'up') {
+      return <ArrowUp className="h-4 w-4 text-green-500" />;
+    } else if (trend === 'down') {
+      return <ArrowDown className="h-4 w-4 text-red-500" />;
+    }
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
   };
 
   const selectedAccountData = accounts.find(acc => acc.id === selectedAccount);
@@ -264,65 +276,89 @@ const Analytics = () => {
         {latestInsight && (
           <>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
+              <Card className="hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Seguidores</CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{latestInsight.followers_count?.toLocaleString() || 0}</div>
-                  {calculateGrowth('followers_count') && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3 text-green-500" />
-                      +{calculateGrowth('followers_count')}% desde última atualização
+                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.followers_count?.toLocaleString() || 0}</div>
+                  {calculateGrowth('followers_count').value && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
+                      {renderTrendIcon(calculateGrowth('followers_count').trend)}
+                      <span className={cn(
+                        calculateGrowth('followers_count').trend === 'up' && 'text-green-500',
+                        calculateGrowth('followers_count').trend === 'down' && 'text-red-500'
+                      )}>
+                        {calculateGrowth('followers_count').value}%
+                      </span>
+                      {' '}desde última atualização
                     </p>
                   )}
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Visualizações</CardTitle>
                   <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{latestInsight.views?.toLocaleString() || 0}</div>
-                  {calculateGrowth('views') && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3 text-green-500" />
-                      +{calculateGrowth('views')}% desde última atualização
+                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.views?.toLocaleString() || 0}</div>
+                  {calculateGrowth('views').value && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
+                      {renderTrendIcon(calculateGrowth('views').trend)}
+                      <span className={cn(
+                        calculateGrowth('views').trend === 'up' && 'text-green-500',
+                        calculateGrowth('views').trend === 'down' && 'text-red-500'
+                      )}>
+                        {calculateGrowth('views').value}%
+                      </span>
+                      {' '}desde última atualização
                     </p>
                   )}
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Curtidas</CardTitle>
                   <Heart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{latestInsight.likes?.toLocaleString() || 0}</div>
-                  {calculateGrowth('likes') && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3 text-green-500" />
-                      +{calculateGrowth('likes')}% desde última atualização
+                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.likes?.toLocaleString() || 0}</div>
+                  {calculateGrowth('likes').value && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
+                      {renderTrendIcon(calculateGrowth('likes').trend)}
+                      <span className={cn(
+                        calculateGrowth('likes').trend === 'up' && 'text-green-500',
+                        calculateGrowth('likes').trend === 'down' && 'text-red-500'
+                      )}>
+                        {calculateGrowth('likes').value}%
+                      </span>
+                      {' '}desde última atualização
                     </p>
                   )}
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Engajamento</CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{latestInsight.engaged_audience?.toLocaleString() || 0}</div>
-                  {calculateGrowth('engaged_audience') && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3 text-green-500" />
-                      +{calculateGrowth('engaged_audience')}% desde última atualização
+                  <div className="text-2xl font-bold text-primary animate-fade-in">{latestInsight.engaged_audience?.toLocaleString() || 0}</div>
+                  {calculateGrowth('engaged_audience').value && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 animate-fade-in">
+                      {renderTrendIcon(calculateGrowth('engaged_audience').trend)}
+                      <span className={cn(
+                        calculateGrowth('engaged_audience').trend === 'up' && 'text-green-500',
+                        calculateGrowth('engaged_audience').trend === 'down' && 'text-red-500'
+                      )}>
+                        {calculateGrowth('engaged_audience').value}%
+                      </span>
+                      {' '}desde última atualização
                     </p>
                   )}
                 </CardContent>
@@ -331,17 +367,20 @@ const Analytics = () => {
 
             {chartData.length > 1 && (
               <>
-                <Card>
+                <Card className="animate-fade-in">
                   <CardHeader>
-                    <CardTitle>Crescimento de Seguidores</CardTitle>
-                    <CardDescription>Evolução ao longo do tempo</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      Crescimento de Seguidores
+                    </CardTitle>
+                    <CardDescription>Evolução ao longo do tempo - Quanto mais alto, melhor!</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={350}>
                       <AreaChart data={chartData}>
                         <defs>
                           <linearGradient id="colorSeguidores" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
                             <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
@@ -352,13 +391,15 @@ const Analytics = () => {
                           contentStyle={{ 
                             backgroundColor: 'hsl(var(--card))', 
                             border: '1px solid hsl(var(--border))',
-                            borderRadius: '8px'
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                           }} 
                         />
                         <Area 
                           type="monotone" 
                           dataKey="seguidores" 
                           stroke="hsl(var(--primary))" 
+                          strokeWidth={3}
                           fillOpacity={1} 
                           fill="url(#colorSeguidores)" 
                         />
@@ -367,13 +408,16 @@ const Analytics = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="animate-fade-in">
                   <CardHeader>
-                    <CardTitle>Engajamento</CardTitle>
-                    <CardDescription>Curtidas, respostas e reposts</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <Heart className="h-5 w-5 text-primary" />
+                      Engajamento Total
+                    </CardTitle>
+                    <CardDescription>Curtidas, respostas e reposts - Sua audiência está interagindo!</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={350}>
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
@@ -382,25 +426,29 @@ const Analytics = () => {
                           contentStyle={{ 
                             backgroundColor: 'hsl(var(--card))', 
                             border: '1px solid hsl(var(--border))',
-                            borderRadius: '8px'
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                           }} 
                         />
                         <Legend />
-                        <Line type="monotone" dataKey="curtidas" stroke="hsl(var(--primary))" name="Curtidas" />
-                        <Line type="monotone" dataKey="respostas" stroke="#10b981" name="Respostas" />
-                        <Line type="monotone" dataKey="reposts" stroke="#8b5cf6" name="Reposts" />
+                        <Line type="monotone" dataKey="curtidas" stroke="hsl(var(--primary))" strokeWidth={2} name="Curtidas" />
+                        <Line type="monotone" dataKey="respostas" stroke="#10b981" strokeWidth={2} name="Respostas" />
+                        <Line type="monotone" dataKey="reposts" stroke="#8b5cf6" strokeWidth={2} name="Reposts" />
                       </LineChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="animate-fade-in">
                   <CardHeader>
-                    <CardTitle>Visualizações e Engajamento</CardTitle>
-                    <CardDescription>Comparativo de métricas</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-primary" />
+                      Visualizações vs Engajamento
+                    </CardTitle>
+                    <CardDescription>Comparação de alcance - O AutoThreads está funcionando!</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={350}>
                       <BarChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
@@ -409,12 +457,13 @@ const Analytics = () => {
                           contentStyle={{ 
                             backgroundColor: 'hsl(var(--card))', 
                             border: '1px solid hsl(var(--border))',
-                            borderRadius: '8px'
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                           }} 
                         />
                         <Legend />
-                        <Bar dataKey="visualizacoes" fill="hsl(var(--primary))" name="Visualizações" />
-                        <Bar dataKey="engajamento" fill="#10b981" name="Engajamento" />
+                        <Bar dataKey="visualizacoes" fill="hsl(var(--primary))" name="Visualizações" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="engajamento" fill="#10b981" name="Engajamento" radius={[8, 8, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
