@@ -95,6 +95,54 @@ export type Database = {
         }
         Relationships: []
       }
+      post_history: {
+        Row: {
+          account_id: string
+          content: string
+          created_at: string
+          id: string
+          phrase_id: string | null
+          posted_at: string
+          threads_post_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          content: string
+          created_at?: string
+          id?: string
+          phrase_id?: string | null
+          posted_at?: string
+          threads_post_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          phrase_id?: string | null
+          posted_at?: string
+          threads_post_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_history_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "threads_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_history_phrase_id_fkey"
+            columns: ["phrase_id"]
+            isOneToOne: false
+            referencedRelation: "phrases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       threads_accounts: {
         Row: {
           access_token: string
