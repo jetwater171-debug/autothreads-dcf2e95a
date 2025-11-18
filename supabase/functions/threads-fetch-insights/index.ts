@@ -57,6 +57,7 @@ Deno.serve(async (req) => {
     console.log('Buscando insights da API do Threads para:', account.username);
 
     // Buscar insights do usuário da API do Threads
+    // Métricas válidas segundo a API: likes, replies, followers_count, follower_demographics, reposts, views, quotes, clicks
     const metricsToFetch = [
       'followers_count',
       'views',
@@ -64,8 +65,7 @@ Deno.serve(async (req) => {
       'replies',
       'reposts',
       'quotes',
-      'shares',
-      'engaged_audience'
+      'clicks'
     ].join(',');
 
     const insightsUrl = `https://graph.threads.net/v1.0/${account.account_id}/threads_insights?metric=${metricsToFetch}&access_token=${account.access_token}`;
@@ -113,10 +113,8 @@ Deno.serve(async (req) => {
           case 'quotes':
             insights.quotes = metricValue;
             break;
-          case 'shares':
-            insights.shares = metricValue;
-            break;
-          case 'engaged_audience':
+          case 'clicks':
+            // Clicks não tem coluna própria, mas podemos armazenar em engaged_audience como aproximação
             insights.engaged_audience = metricValue;
             break;
         }
