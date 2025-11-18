@@ -35,32 +35,11 @@ Deno.serve(async (req) => {
 
     for (const account of accounts || []) {
       try {
-        console.log(`Buscando dados para: ${account.username || account.account_id}`);
+        console.log(`Buscando insights para: ${account.username || account.account_id}`);
 
-        // 1. Buscar o número de seguidores atuais da conta usando a API do Threads
-        const profileUrl = `https://graph.threads.net/v1.0/${account.account_id}?fields=follower_count&access_token=${account.access_token}`;
-        
-        const profileResponse = await fetch(profileUrl, {
-          method: 'GET',
-        });
-
-        if (!profileResponse.ok) {
-          const errorText = await profileResponse.text();
-          console.error(`Erro ao buscar perfil para ${account.username}:`, errorText);
-          results.push({
-            account_id: account.id,
-            username: account.username,
-            success: false,
-            error: `Erro ao buscar perfil: ${errorText}`,
-          });
-          continue;
-        }
-
-        const profileData = await profileResponse.json();
-        console.log(`Perfil obtido para ${account.username}:`, JSON.stringify(profileData));
-
-        // 2. Buscar insights do usuário da API do Threads (sem followers_count)
+        // Métricas válidas segundo a API (inclui followers_count)
         const metricsToFetch = [
+          'followers_count',
           'views',
           'likes',
           'replies',
@@ -93,8 +72,6 @@ Deno.serve(async (req) => {
         const insights: any = {
           user_id: account.user_id,
           account_id: account.id,
-          // Usar o follower_count do perfil (atual) - campo correto da API
-          followers_count: profileData.follower_count || 0,
         };
 
         if (insightsData.data && Array.isArray(insightsData.data)) {
@@ -111,6 +88,9 @@ Deno.serve(async (req) => {
             }
             
             switch (metricName) {
+              case 'followers_count':
+                insights.followers_count = metricValue;
+                break;
               case 'views':
                 insights.views = metricValue;
                 break;

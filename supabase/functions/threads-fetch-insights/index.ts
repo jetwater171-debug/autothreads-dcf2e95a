@@ -54,26 +54,11 @@ Deno.serve(async (req) => {
       throw new Error('Conta não encontrada');
     }
 
-    console.log('Buscando dados da API do Threads para:', account.username);
+    console.log('Buscando insights da API do Threads para:', account.username);
 
-    // 1. Buscar o número de seguidores atuais da conta usando a API do Threads
-    const profileUrl = `https://graph.threads.net/v1.0/${account.account_id}?fields=follower_count&access_token=${account.access_token}`;
-    
-    const profileResponse = await fetch(profileUrl, {
-      method: 'GET',
-    });
-
-    if (!profileResponse.ok) {
-      const errorText = await profileResponse.text();
-      console.error('Erro ao buscar perfil:', errorText);
-      throw new Error(`Erro ao buscar perfil: ${errorText}`);
-    }
-
-    const profileData = await profileResponse.json();
-    console.log('Perfil obtido:', JSON.stringify(profileData));
-
-    // 2. Buscar insights do usuário da API do Threads (sem followers_count)
+    // Buscar insights do usuário da API do Threads, incluindo followers_count
     const metricsToFetch = [
+      'followers_count',
       'views',
       'likes',
       'replies',
@@ -101,8 +86,6 @@ Deno.serve(async (req) => {
     const insights: any = {
       user_id: user.id,
       account_id: accountId,
-      // Usar o follower_count do perfil (atual) - campo correto da API
-      followers_count: profileData.follower_count || 0,
     };
 
     if (insightsData.data && Array.isArray(insightsData.data)) {
@@ -120,6 +103,9 @@ Deno.serve(async (req) => {
         }
         
         switch (metricName) {
+          case 'followers_count':
+            insights.followers_count = metricValue;
+            break;
           case 'views':
             insights.views = metricValue;
             break;
