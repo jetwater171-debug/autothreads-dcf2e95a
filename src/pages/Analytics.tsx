@@ -5,11 +5,12 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, TrendingDown, Users, Eye, Heart, MessageCircle, Repeat2, Loader2, RefreshCw, ArrowUp, ArrowDown, Minus, MessageSquare, Quote } from "lucide-react";
-import { format } from "date-fns";
+import { format, subDays, isAfter } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface ThreadsAccount {
@@ -38,6 +39,7 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [latestInsight, setLatestInsight] = useState<Insight | null>(null);
+  const [timePeriod, setTimePeriod] = useState<"today" | "7days" | "30days" | "all">("all");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -142,8 +144,35 @@ const Analytics = () => {
     }
   };
 
+  const filterInsightsByPeriod = (allInsights: Insight[]): Insight[] => {
+    const now = new Date();
+    
+    switch (timePeriod) {
+      case "today":
+        return allInsights.filter(insight => {
+          const insightDate = new Date(insight.collected_at);
+          return insightDate.toDateString() === now.toDateString();
+        });
+      case "7days":
+        const sevenDaysAgo = subDays(now, 7);
+        return allInsights.filter(insight => 
+          isAfter(new Date(insight.collected_at), sevenDaysAgo)
+        );
+      case "30days":
+        const thirtyDaysAgo = subDays(now, 30);
+        return allInsights.filter(insight => 
+          isAfter(new Date(insight.collected_at), thirtyDaysAgo)
+        );
+      case "all":
+      default:
+        return allInsights;
+    }
+  };
+
+  const filteredInsights = filterInsightsByPeriod(insights);
+
   const formatChartData = () => {
-    return insights.map((insight) => ({
+    return filteredInsights.map((insight) => ({
       date: format(new Date(insight.collected_at), "dd/MM"),
       seguidores: insight.followers_count || 0,
       visualizacoes: insight.views || 0,
@@ -156,10 +185,10 @@ const Analytics = () => {
   };
 
   const calculateGrowth = (metric: keyof Insight): { value: string | null; trend: 'up' | 'down' | 'neutral' } => {
-    if (insights.length < 2) return { value: null, trend: 'neutral' };
+    if (filteredInsights.length < 2) return { value: null, trend: 'neutral' };
     
-    const latest = insights[insights.length - 1][metric] || 0;
-    const previous = insights[insights.length - 2][metric] || 0;
+    const latest = filteredInsights[filteredInsights.length - 1][metric] || 0;
+    const previous = filteredInsights[filteredInsights.length - 2][metric] || 0;
     
     if (previous === 0) return { value: null, trend: 'neutral' };
     
@@ -276,6 +305,25 @@ const Analytics = () => {
 
         {latestInsight && (
           <>
+            <Card>
+              <CardHeader>
+                <CardTitle>Período</CardTitle>
+                <CardDescription>
+                  Selecione o período para visualizar os dados
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs value={timePeriod} onValueChange={(value) => setTimePeriod(value as typeof timePeriod)}>
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="today">Hoje</TabsTrigger>
+                    <TabsTrigger value="7days">7 dias</TabsTrigger>
+                    <TabsTrigger value="30days">30 dias</TabsTrigger>
+                    <TabsTrigger value="all">Tudo</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </CardContent>
+            </Card>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card className="hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
