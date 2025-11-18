@@ -47,21 +47,6 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="space-y-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">
-              Carregando...
-            </p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
     <Layout>
       <div className="space-y-8">
