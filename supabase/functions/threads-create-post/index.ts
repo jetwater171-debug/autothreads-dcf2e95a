@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -77,6 +79,11 @@ Deno.serve(async (req) => {
     const creationId = createData.id;
 
     console.log('Post criado com ID:', creationId);
+    console.log('Aguardando 10 segundos para processar container...');
+    
+    // Delay de 10 segundos para a API processar o container
+    await sleep(10000);
+    
     console.log('Publicando post...');
 
     // Publicar o post
