@@ -88,7 +88,7 @@ const Auth = () => {
   return <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-4 rounded-none">
             <img src={logoAuth} alt="AutoThreads" className="h-20 w-auto object-fill" />
           </div>
           
