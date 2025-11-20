@@ -89,12 +89,10 @@ const Auth = () => {
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <img src={logoAuth} alt="AutoThreads" className="h-20 w-auto" />
+            <img src={logoAuth} alt="AutoThreads" className="h-20 w-auto object-fill" />
           </div>
-          <CardTitle className="text-2xl text-center">AutoThreads</CardTitle>
-          <CardDescription className="text-center">
-            Faça login ou crie sua conta para começar
-          </CardDescription>
+          
+          
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
