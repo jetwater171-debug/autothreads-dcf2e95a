@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Sparkles } from "lucide-react";
+import logoAuth from "@/assets/logo-auth.png";
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -87,9 +88,13 @@ const Auth = () => {
   return <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-1">
-          
-          
-          
+          <div className="flex justify-center mb-4">
+            <img src={logoAuth} alt="AutoThreads" className="h-20 w-auto" />
+          </div>
+          <CardTitle className="text-2xl text-center">AutoThreads</CardTitle>
+          <CardDescription className="text-center">
+            Faça login ou crie sua conta para começar
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
