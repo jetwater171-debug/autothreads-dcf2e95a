@@ -28,6 +28,7 @@ interface PeriodicPost {
   use_random_image: boolean;
   specific_image_id: string | null;
   specific_phrase_id: string | null;
+  random_phrase_folder_id: string | null;
   carousel_image_ids: string[] | null;
   account_id: string;
   campaign_id: string | null;
@@ -105,6 +106,7 @@ const PeriodicPosts = () => {
   const [useText, setUseText] = useState(true);
   const [useRandomPhrase, setUseRandomPhrase] = useState(true);
   const [selectedPhrase, setSelectedPhrase] = useState("");
+  const [selectedRandomPhraseFolder, setSelectedRandomPhraseFolder] = useState<string | null>(null);
   const [useRandomImage, setUseRandomImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
   const [carouselImages, setCarouselImages] = useState<string[]>([]);
@@ -337,6 +339,7 @@ const PeriodicPosts = () => {
         post_type: postType,
         use_random_phrase: postType === 'text' ? useRandomPhrase : (useText ? useRandomPhrase : false),
         specific_phrase_id: postType === 'text' && !useRandomPhrase ? selectedPhrase || null : (useText && !useRandomPhrase ? selectedPhrase || null : null),
+        random_phrase_folder_id: (postType === 'text' && useRandomPhrase) || (postType !== 'text' && useText && useRandomPhrase) ? selectedRandomPhraseFolder : null,
         use_random_image: postType === 'image' ? useRandomImage : false,
         specific_image_id: postType === 'image' && !useRandomImage ? selectedImage || null : null,
         carousel_image_ids: postType === 'carousel' ? carouselImages : [],
@@ -419,6 +422,7 @@ const PeriodicPosts = () => {
     setUseText(true);
     setUseRandomPhrase(true);
     setSelectedPhrase("");
+    setSelectedRandomPhraseFolder(null);
     setUseRandomImage(false);
     setSelectedImage("");
     setCarouselImages([]);
@@ -463,12 +467,18 @@ const PeriodicPosts = () => {
       let phraseContent = "";
       if (post.post_type === 'text' || (post.post_type !== 'text' && post.specific_phrase_id)) {
         if (post.use_random_phrase) {
-          const { data: randomPhrase } = await supabase
-            .from("phrases")
-            .select("content")
-            .limit(1)
-            .single();
-          if (randomPhrase) phraseContent = randomPhrase.content;
+          // Buscar frase aleatória respeitando a pasta (se especificada)
+          let query = supabase.from("phrases").select("content");
+          
+          if (post.random_phrase_folder_id) {
+            query = query.eq("folder_id", post.random_phrase_folder_id);
+          }
+          
+          const { data: allPhrases } = await query;
+          if (allPhrases && allPhrases.length > 0) {
+            const randomPhrase = allPhrases[Math.floor(Math.random() * allPhrases.length)];
+            phraseContent = randomPhrase.content;
+          }
         } else if (post.phrases) {
           phraseContent = post.phrases.content;
         }
@@ -877,12 +887,34 @@ const PeriodicPosts = () => {
                                         <span className="text-lg">🎲</span>
                                         <Label htmlFor="randomPhrase" className="text-sm font-medium">Frase Aleatória</Label>
                                       </div>
-                                      <Switch
+                                     <Switch
                                         id="randomPhrase"
                                         checked={useRandomPhrase}
                                         onCheckedChange={setUseRandomPhrase}
                                       />
                                     </div>
+
+                                    {useRandomPhrase && (
+                                      <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">
+                                        <Label htmlFor="randomPhraseFolderImage" className="text-sm font-medium flex items-center gap-2">
+                                          <span>📁</span>
+                                          Escolher pasta (opcional)
+                                        </Label>
+                                        <Select value={selectedRandomPhraseFolder || "all"} onValueChange={(v) => setSelectedRandomPhraseFolder(v === "all" ? null : v)}>
+                                          <SelectTrigger className="bg-background h-10 border-border/60 hover:border-primary/50 transition-colors">
+                                            <SelectValue placeholder="Todas as pastas" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="all">Todas as pastas</SelectItem>
+                                            {phraseFolders.map((folder) => (
+                                              <SelectItem key={folder.id} value={folder.id}>
+                                                {folder.name}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    )}
 
                                     {!useRandomPhrase && (
                                       <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">
@@ -1023,12 +1055,34 @@ const PeriodicPosts = () => {
                                         <span className="text-lg">🎲</span>
                                         <Label htmlFor="randomPhraseCarousel" className="text-sm font-medium">Frase Aleatória</Label>
                                       </div>
-                                      <Switch
+                                     <Switch
                                         id="randomPhraseCarousel"
                                         checked={useRandomPhrase}
                                         onCheckedChange={setUseRandomPhrase}
                                       />
                                     </div>
+
+                                    {useRandomPhrase && (
+                                      <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">
+                                        <Label htmlFor="randomPhraseFolderCarousel" className="text-sm font-medium flex items-center gap-2">
+                                          <span>📁</span>
+                                          Escolher pasta (opcional)
+                                        </Label>
+                                        <Select value={selectedRandomPhraseFolder || "all"} onValueChange={(v) => setSelectedRandomPhraseFolder(v === "all" ? null : v)}>
+                                          <SelectTrigger className="bg-background h-10 border-border/60 hover:border-primary/50 transition-colors">
+                                            <SelectValue placeholder="Todas as pastas" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="all">Todas as pastas</SelectItem>
+                                            {phraseFolders.map((folder) => (
+                                              <SelectItem key={folder.id} value={folder.id}>
+                                                {folder.name}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    )}
 
                                     {!useRandomPhrase && (
                                       <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">

@@ -256,10 +256,17 @@ Deno.serve(async (req) => {
 //
 async function getPhraseForPost(supabase: any, post: any) {
   if (post.use_random_phrase) {
-    const { data: phrases } = await supabase
+    let query = supabase
       .from("phrases")
       .select("content")
       .eq("user_id", post.user_id);
+
+    // Filtrar por pasta se especificado
+    if (post.random_phrase_folder_id) {
+      query = query.eq("folder_id", post.random_phrase_folder_id);
+    }
+
+    const { data: phrases } = await query;
 
     if (!phrases || phrases.length === 0) return "";
 

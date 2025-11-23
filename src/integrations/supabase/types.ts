@@ -185,6 +185,7 @@ export type Database = {
           is_active: boolean | null
           last_posted_at: string | null
           post_type: string | null
+          random_phrase_folder_id: string | null
           specific_image_id: string | null
           specific_phrase_id: string | null
           title: string
@@ -204,6 +205,7 @@ export type Database = {
           is_active?: boolean | null
           last_posted_at?: string | null
           post_type?: string | null
+          random_phrase_folder_id?: string | null
           specific_image_id?: string | null
           specific_phrase_id?: string | null
           title?: string
@@ -223,6 +225,7 @@ export type Database = {
           is_active?: boolean | null
           last_posted_at?: string | null
           post_type?: string | null
+          random_phrase_folder_id?: string | null
           specific_image_id?: string | null
           specific_phrase_id?: string | null
           title?: string
@@ -245,6 +248,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodic_posts_random_phrase_folder_id_fkey"
+            columns: ["random_phrase_folder_id"]
+            isOneToOne: false
+            referencedRelation: "content_folders"
             referencedColumns: ["id"]
           },
           {
