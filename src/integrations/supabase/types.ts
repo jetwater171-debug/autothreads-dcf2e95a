@@ -313,7 +313,9 @@ export type Database = {
           account_id: string
           attempts: number | null
           content: string
+          content_hash: string | null
           created_at: string
+          duplicate_skipped: boolean | null
           error_message: string | null
           id: string
           image_urls: string[] | null
@@ -327,7 +329,9 @@ export type Database = {
           account_id: string
           attempts?: number | null
           content: string
+          content_hash?: string | null
           created_at?: string
+          duplicate_skipped?: boolean | null
           error_message?: string | null
           id?: string
           image_urls?: string[] | null
@@ -341,7 +345,9 @@ export type Database = {
           account_id?: string
           attempts?: number | null
           content?: string
+          content_hash?: string | null
           created_at?: string
+          duplicate_skipped?: boolean | null
           error_message?: string | null
           id?: string
           image_urls?: string[] | null
