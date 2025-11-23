@@ -29,6 +29,7 @@ interface PeriodicPost {
   specific_phrase_id: string | null;
   carousel_image_ids: string[] | null;
   account_id: string;
+  campaign_id: string | null;
   threads_accounts: {
     username: string | null;
     account_id: string;
@@ -39,6 +40,9 @@ interface PeriodicPost {
   } | null;
   images?: {
     public_url: string;
+  } | null;
+  campaigns?: {
+    title: string;
   } | null;
   has_missing_phrase?: boolean;
   has_missing_images?: boolean;
@@ -63,17 +67,25 @@ interface Phrase {
   content: string;
 }
 
+interface Campaign {
+  id: string;
+  title: string;
+  status: string;
+}
+
 const PeriodicPosts = () => {
   const [posts, setPosts] = useState<PeriodicPost[]>([]);
   const [accounts, setAccounts] = useState<ThreadsAccount[]>([]);
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [images, setImages] = useState<Image[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [postingNow, setPostingNow] = useState<string | null>(null);
   
   const [title, setTitle] = useState("");
   const [selectedAccount, setSelectedAccount] = useState("");
+  const [selectedCampaign, setSelectedCampaign] = useState<string>("");
   const [intervalMinutes, setIntervalMinutes] = useState("10");
   const [postType, setPostType] = useState<'text' | 'image' | 'carousel'>('text');
   const [useText, setUseText] = useState(true);
@@ -94,7 +106,7 @@ const PeriodicPosts = () => {
         navigate("/auth");
         return;
       }
-      await Promise.all([loadPosts(), loadAccounts(), loadPhrases(), loadImages()]);
+      await Promise.all([loadPosts(), loadAccounts(), loadPhrases(), loadImages(), loadCampaigns()]);
     };
 
     checkAuth();
@@ -107,7 +119,8 @@ const PeriodicPosts = () => {
         .select(`
           *,
           threads_accounts (username, account_id, profile_picture_url),
-          phrases (content)
+          phrases (content),
+          campaigns (title)
         `)
         .order("created_at", { ascending: false });
 
@@ -202,6 +215,20 @@ const PeriodicPosts = () => {
     }
   };
 
+  const loadCampaigns = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, title, status")
+        .eq("status", "active");
+
+      if (error) throw error;
+      setCampaigns(data || []);
+    } catch (error) {
+      console.error("Error loading campaigns:", error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -246,6 +273,7 @@ const PeriodicPosts = () => {
         user_id: user.id,
         title: title.trim(),
         account_id: selectedAccount,
+        campaign_id: selectedCampaign || null,
         interval_minutes: parseInt(intervalMinutes),
         post_type: postType,
         use_random_phrase: postType === 'text' ? useRandomPhrase : (useText ? useRandomPhrase : false),
@@ -326,6 +354,7 @@ const PeriodicPosts = () => {
   const resetForm = () => {
     setTitle("");
     setSelectedAccount("");
+    setSelectedCampaign("");
     setIntervalMinutes("10");
     setPostType('text');
     setUseText(true);
@@ -531,6 +560,28 @@ const PeriodicPosts = () => {
                           </Select>
                         </div>
 
+                        <div className="space-y-3">
+                          <Label htmlFor="campaign" className="text-sm font-medium flex items-center gap-2">
+                            <span className="text-base">📢</span>
+                            Campanha (opcional)
+                          </Label>
+                          <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+                            <SelectTrigger className="h-12 border-border/60 hover:border-primary/50 transition-colors">
+                              <SelectValue placeholder="Sem campanha" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Sem campanha</SelectItem>
+                              {campaigns.map((campaign) => (
+                                <SelectItem key={campaign.id} value={campaign.id}>
+                                  {campaign.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-5 sm:grid-cols-2">
                         <div className="space-y-3">
                           <Label htmlFor="interval" className="text-sm font-medium flex items-center gap-2">
                             <span className="text-base">⏱️</span>
@@ -999,6 +1050,14 @@ const PeriodicPosts = () => {
                          post.post_type === 'image' ? '🖼️ Imagem' : 
                          '🎠 Carrossel'}
                       </span>
+                      {post.campaigns && (
+                        <>
+                          <span className="text-muted-foreground/60">•</span>
+                          <Badge variant="outline" className="text-xs">
+                            📢 {post.campaigns.title}
+                          </Badge>
+                        </>
+                      )}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">

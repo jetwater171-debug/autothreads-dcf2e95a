@@ -12,6 +12,8 @@ import PeriodicPosts from "./pages/PeriodicPosts";
 import ManualPost from "./pages/ManualPost";
 import Images from "./pages/Images";
 import Analytics from "./pages/Analytics";
+import Campaigns from "./pages/Campaigns";
+import CampaignDetails from "./pages/CampaignDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
           <Route path="/phrases" element={<Phrases />} />
           <Route path="/images" element={<Images />} />
           <Route path="/periodic-posts" element={<PeriodicPosts />} />
+          <Route path="/campaigns" element={<Campaigns />} />
+          <Route path="/campaigns/:id" element={<CampaignDetails />} />
           <Route path="/manual-post" element={<ManualPost />} />
           <Route path="/analytics" element={<Analytics />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

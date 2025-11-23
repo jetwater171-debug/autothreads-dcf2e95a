@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun, TrendingUp, ImageIcon } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun, TrendingUp, ImageIcon, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useEffect, useState } from "react";
@@ -62,6 +62,10 @@ const Layout = ({
     path: "/periodic-posts",
     label: "Posts Periódicos",
     icon: Calendar
+  }, {
+    path: "/campaigns",
+    label: "Campanhas",
+    icon: Megaphone
   }, {
     path: "/manual-post",
     label: "Post Manual",
