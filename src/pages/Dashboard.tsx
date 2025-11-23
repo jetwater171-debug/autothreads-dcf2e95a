@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { MessageSquare, Calendar, Users, Sparkles, ArrowRight } from "lucide-react";
+import { MessageSquare, Calendar, Users, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -139,42 +138,6 @@ const Dashboard = () => {
                   );
                 })}
               </ul>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 overflow-hidden relative group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-x-32 -translate-y-32 group-hover:bg-primary/10 transition-all duration-500" />
-          <CardHeader className="relative">
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                Histórico de Posts
-              </div>
-            </CardTitle>
-            <CardDescription>
-              Acompanhe todos os posts publicados pela automação
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-center py-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-                <MessageSquare className="h-8 w-8 text-primary" />
-              </div>
-              <p className="text-lg font-medium mb-2">
-                {stats.postsToday > 0 ? `${stats.postsToday} posts hoje` : "Nenhum post hoje"}
-              </p>
-              <p className="text-sm text-muted-foreground mb-6">
-                Visualize o histórico completo de publicações
-              </p>
-              <Button 
-                size="lg"
-                onClick={() => navigate("/post-history")}
-                className="group/btn shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
-              >
-                Ver Histórico Completo
-                <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
-              </Button>
             </div>
           </CardContent>
         </Card>
