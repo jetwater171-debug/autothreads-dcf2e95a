@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Clock, CheckCircle, XCircle, Send, Loader2, AlertCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface PeriodicPost {
@@ -46,6 +47,7 @@ interface PeriodicPost {
   } | null;
   has_missing_phrase?: boolean;
   has_missing_images?: boolean;
+  last_error?: string | null;
 }
 
 interface Image {
@@ -138,10 +140,24 @@ const PeriodicPosts = () => {
 
       if (error) throw error;
       
-      // Validar se frases e imagens ainda existem
-      const validatedPosts = await Promise.all((data || []).map(async (post) => {
+      // Buscar último erro e validar conteúdo de cada automação
+      const postsWithErrors = await Promise.all((data || []).map(async (post) => {
         let has_missing_phrase = false;
         let has_missing_images = false;
+        let last_error = null;
+
+        // Buscar último post no histórico para esta automação/conta
+        const { data: lastHistory } = await supabase
+          .from("post_history")
+          .select("error_message, attempts")
+          .eq("account_id", post.account_id)
+          .order("posted_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (lastHistory?.error_message) {
+          last_error = lastHistory.error_message;
+        }
 
         // Verificar frase específica
         if (post.specific_phrase_id && !post.use_random_phrase) {
@@ -149,7 +165,7 @@ const PeriodicPosts = () => {
             .from("phrases")
             .select("id")
             .eq("id", post.specific_phrase_id)
-            .single();
+            .maybeSingle();
           has_missing_phrase = !phrase;
         }
 
@@ -159,7 +175,7 @@ const PeriodicPosts = () => {
             .from("images")
             .select("id")
             .eq("id", post.specific_image_id)
-            .single();
+            .maybeSingle();
           has_missing_images = !image;
         }
 
@@ -176,10 +192,11 @@ const PeriodicPosts = () => {
           ...post,
           has_missing_phrase,
           has_missing_images,
+          last_error,
         };
       }));
 
-      setPosts(validatedPosts);
+      setPosts(postsWithErrors);
     } catch (error) {
       console.error("Error loading posts:", error);
     } finally {
@@ -1180,6 +1197,21 @@ const PeriodicPosts = () => {
                           <AlertCircle className="h-3 w-3" />
                           Imagem removida
                         </Badge>
+                      )}
+                      {post.last_error && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="destructive" className="gap-1 text-xs cursor-help">
+                                <AlertCircle className="h-3 w-3" />
+                                Última execução falhou
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-xs">{post.last_error}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2 flex-wrap">
