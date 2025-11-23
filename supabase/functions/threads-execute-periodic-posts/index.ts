@@ -7,6 +7,79 @@ const corsHeaders = {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+async function createPostWithRetry(
+  url: string,
+  body: any,
+  authHeader: string,
+  maxAttempts: number = 3
+): Promise<{ success: boolean; data?: any; error?: string; attempts: number }> {
+  const delays = [0, 10000, 30000]; // 0s, 10s, 30s
+  
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      if (attempt > 1) {
+        const delayMs = delays[attempt - 1];
+        console.log(`🔄 Tentativa ${attempt}/${maxAttempts} após ${delayMs / 1000}s...`);
+        await sleep(delayMs);
+      } else {
+        console.log(`📤 Tentativa ${attempt}/${maxAttempts}...`);
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": authHeader,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log(`✅ Sucesso na tentativa ${attempt}`);
+        return { success: true, data, attempts: attempt };
+      }
+
+      console.log(`⚠️ Falha na tentativa ${attempt}: ${data.error || 'Erro desconhecido'}`);
+      
+      // Se não for a última tentativa, continua
+      if (attempt < maxAttempts) {
+        continue;
+      }
+
+      // Última tentativa falhou
+      return {
+        success: false,
+        error: data.error || 'Erro desconhecido',
+        attempts: attempt
+      };
+
+    } catch (err: any) {
+      console.log(`⚠️ Exceção na tentativa ${attempt}: ${err.message}`);
+      
+      // Se não for a última tentativa, continua
+      if (attempt < maxAttempts) {
+        continue;
+      }
+
+      // Última tentativa falhou
+      return {
+        success: false,
+        error: err.message,
+        attempts: attempt
+      };
+    }
+  }
+
+  // Fallback (nunca deve chegar aqui)
+  return {
+    success: false,
+    error: 'Todas as tentativas falharam',
+    attempts: maxAttempts
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -78,35 +151,52 @@ Deno.serve(async (req) => {
           await sleep(delaySec * 1000);
         }
 
-        // 6. Criar post chamando sua function oficial
+        // 6. Criar post com retry automático
         const createPostUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/threads-create-post`;
-
-        const createResponse = await fetch(createPostUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          },
-          body: JSON.stringify({
+        
+        const result = await createPostWithRetry(
+          createPostUrl,
+          {
             accountId: post.account_id,
             text: phraseContent,
             imageUrls,
             postType: post.post_type,
             userId: post.user_id,
-          }),
-        });
+          },
+          `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          3
+        );
 
-        const createData = await createResponse.json();
+        if (!result.success) {
+          console.error(`❌ Todas as tentativas falharam após ${result.attempts} attempts`);
+          
+          // Registrar falha no histórico
+          await supabase.from("post_history").insert({
+            user_id: post.user_id,
+            account_id: post.account_id,
+            phrase_id: post.specific_phrase_id ?? null,
+            content: phraseContent,
+            image_urls: imageUrls,
+            post_type: post.post_type,
+            posted_at: now.toISOString(),
+            error_message: result.error,
+            attempts: result.attempts,
+          });
 
-        if (!createData.success) {
-          console.error(`❌ Erro na resposta:`, createData);
-          throw new Error(createData.error || 'Erro desconhecido ao criar post');
+          results.push({
+            postId: post.id,
+            success: false,
+            error: result.error,
+            attempts: result.attempts,
+          });
+
+          continue;
         }
 
-        console.log(`✅ Publicado com sucesso!`);
-        console.log(`   Threads ID: ${createData.postId}`);
+        console.log(`✅ Publicado com sucesso após ${result.attempts} tentativa(s)!`);
+        console.log(`   Threads ID: ${result.data.postId}`);
 
-        // 7. Registrar histórico
+        // 7. Registrar histórico de sucesso
         await supabase.from("post_history").insert({
           user_id: post.user_id,
           account_id: post.account_id,
@@ -114,14 +204,16 @@ Deno.serve(async (req) => {
           content: phraseContent,
           image_urls: imageUrls,
           post_type: post.post_type,
-          threads_post_id: createData.postId,
+          threads_post_id: result.data.postId,
           posted_at: now.toISOString(),
+          attempts: result.attempts,
         });
 
         results.push({
           postId: post.id,
           success: true,
-          threadsPostId: createData.postId,
+          threadsPostId: result.data.postId,
+          attempts: result.attempts,
         });
 
       } catch (err: any) {

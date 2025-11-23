@@ -301,8 +301,10 @@ export type Database = {
       post_history: {
         Row: {
           account_id: string
+          attempts: number | null
           content: string
           created_at: string
+          error_message: string | null
           id: string
           image_urls: string[] | null
           phrase_id: string | null
@@ -313,8 +315,10 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          attempts?: number | null
           content: string
           created_at?: string
+          error_message?: string | null
           id?: string
           image_urls?: string[] | null
           phrase_id?: string | null
@@ -325,8 +329,10 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          attempts?: number | null
           content?: string
           created_at?: string
+          error_message?: string | null
           id?: string
           image_urls?: string[] | null
           phrase_id?: string | null
