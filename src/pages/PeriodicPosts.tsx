@@ -322,18 +322,27 @@ const PeriodicPosts = () => {
                   <Label htmlFor="account">Conta</Label>
                   <Select value={selectedAccount} onValueChange={setSelectedAccount} required>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma conta" />
+                      <SelectValue placeholder="Selecione uma conta">
+                        {selectedAccount && accounts.find(a => a.id === selectedAccount) && (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage 
+                                src={accounts.find(a => a.id === selectedAccount)?.profile_picture_url || undefined} 
+                                alt={accounts.find(a => a.id === selectedAccount)?.username || "Profile"} 
+                              />
+                              <AvatarFallback>
+                                {accounts.find(a => a.id === selectedAccount)?.username?.charAt(0).toUpperCase() || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            {accounts.find(a => a.id === selectedAccount)?.username || accounts.find(a => a.id === selectedAccount)?.account_id}
+                          </div>
+                        )}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {accounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={account.profile_picture_url || undefined} alt={account.username || "Profile"} />
-                              <AvatarFallback>{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
-                            </Avatar>
-                            {account.username || account.account_id}
-                          </div>
+                          {account.username || account.account_id}
                         </SelectItem>
                       ))}
                     </SelectContent>

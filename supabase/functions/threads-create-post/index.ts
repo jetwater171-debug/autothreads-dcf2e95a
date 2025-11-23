@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { accountId, text, imageUrls, postType } = await req.json();
+    const { accountId, text, imageUrls, postType, userId } = await req.json();
 
     if (!accountId) {
       throw new Error('accountId é obrigatório');
@@ -38,9 +38,12 @@ Deno.serve(async (req) => {
       throw new Error('Token de autenticação não fornecido');
     }
 
+    // Determinar se está usando SERVICE_ROLE_KEY ou token de usuário
+    const isServiceRole = authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || 'SERVICE_ROLE');
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      isServiceRole ? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '' : Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
           headers: { Authorization: authHeader },
@@ -48,12 +51,22 @@ Deno.serve(async (req) => {
       }
     );
 
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
+    let userIdToUse = userId;
+    
+    // Se não for chamada de service role, obter usuário autenticado
+    if (!isServiceRole) {
+      const {
+        data: { user },
+      } = await supabaseClient.auth.getUser();
 
-    if (!user) {
-      throw new Error('Usuário não autenticado');
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+      userIdToUse = user.id;
+    }
+
+    if (!userIdToUse) {
+      throw new Error('userId é obrigatório para chamadas de service role');
     }
 
     // Buscar conta do Threads
@@ -61,7 +74,7 @@ Deno.serve(async (req) => {
       .from('threads_accounts')
       .select('account_id, access_token')
       .eq('id', accountId)
-      .eq('user_id', user.id)
+      .eq('user_id', userIdToUse)
       .single();
 
     if (accountError || !account) {
