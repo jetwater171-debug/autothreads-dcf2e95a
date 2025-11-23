@@ -39,6 +39,8 @@ Deno.serve(async (req) => {
     for (const post of periodicPosts || []) {
       try {
         console.log(`\n📝 Processando post ID ${post.id}...`);
+        console.log(`   Tipo: ${post.post_type}`);
+        console.log(`   Conta: ${post.threads_accounts?.username || 'desconhecida'}`);
 
         // 1. Verificar tempo desde o último post
         const now = new Date();
@@ -90,9 +92,13 @@ Deno.serve(async (req) => {
 
         const createData = await createResponse.json();
 
-        if (!createData.success) throw new Error(createData.error);
+        if (!createData.success) {
+          console.error(`❌ Erro na resposta:`, createData);
+          throw new Error(createData.error || 'Erro desconhecido ao criar post');
+        }
 
-        console.log(`✅ Publicado com sucesso: Threads ID ${createData.postId}`);
+        console.log(`✅ Publicado com sucesso!`);
+        console.log(`   Threads ID: ${createData.postId}`);
 
         // 6. Registrar histórico
         await supabase.from("post_history").insert({
@@ -119,7 +125,9 @@ Deno.serve(async (req) => {
         });
 
       } catch (err: any) {
-        console.error(`❌ Erro no post ${post.id}:`, err.message);
+        console.error(`❌ ERRO no post ${post.id}:`);
+        console.error(`   Mensagem: ${err.message}`);
+        console.error(`   Stack:`, err.stack);
 
         results.push({
           postId: post.id,
