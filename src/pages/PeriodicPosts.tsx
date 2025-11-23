@@ -85,7 +85,7 @@ const PeriodicPosts = () => {
   
   const [title, setTitle] = useState("");
   const [selectedAccount, setSelectedAccount] = useState("");
-  const [selectedCampaign, setSelectedCampaign] = useState<string>("");
+  const [selectedCampaign, setSelectedCampaign] = useState<string>("none");
   const [intervalMinutes, setIntervalMinutes] = useState("10");
   const [postType, setPostType] = useState<'text' | 'image' | 'carousel'>('text');
   const [useText, setUseText] = useState(true);
@@ -273,7 +273,7 @@ const PeriodicPosts = () => {
         user_id: user.id,
         title: title.trim(),
         account_id: selectedAccount,
-        campaign_id: selectedCampaign || null,
+        campaign_id: selectedCampaign === "none" ? null : selectedCampaign,
         interval_minutes: parseInt(intervalMinutes),
         post_type: postType,
         use_random_phrase: postType === 'text' ? useRandomPhrase : (useText ? useRandomPhrase : false),
@@ -354,7 +354,7 @@ const PeriodicPosts = () => {
   const resetForm = () => {
     setTitle("");
     setSelectedAccount("");
-    setSelectedCampaign("");
+    setSelectedCampaign("none");
     setIntervalMinutes("10");
     setPostType('text');
     setUseText(true);
@@ -570,7 +570,7 @@ const PeriodicPosts = () => {
                               <SelectValue placeholder="Sem campanha" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Sem campanha</SelectItem>
+                              <SelectItem value="none">Sem campanha</SelectItem>
                               {campaigns.map((campaign) => (
                                 <SelectItem key={campaign.id} value={campaign.id}>
                                   {campaign.title}
