@@ -266,6 +266,8 @@ export type Database = {
           id: string
           is_active: boolean | null
           profile_picture_url: string | null
+          token_expires_at: string | null
+          token_refreshed_at: string | null
           updated_at: string | null
           user_id: string
           username: string | null
@@ -278,6 +280,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           profile_picture_url?: string | null
+          token_expires_at?: string | null
+          token_refreshed_at?: string | null
           updated_at?: string | null
           user_id: string
           username?: string | null
@@ -290,6 +294,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           profile_picture_url?: string | null
+          token_expires_at?: string | null
+          token_refreshed_at?: string | null
           updated_at?: string | null
           user_id?: string
           username?: string | null
