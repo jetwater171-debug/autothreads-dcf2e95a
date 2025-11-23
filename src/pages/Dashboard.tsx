@@ -94,10 +94,10 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
+      <div className="space-y-12">
+        <div className="space-y-2">
+          <h1 className="text-[32px] font-semibold">Dashboard</h1>
+          <p className="text-muted-foreground text-[15px]">
             Visão geral da sua automação no Threads
           </p>
         </div>
@@ -108,39 +108,46 @@ const Dashboard = () => {
               title: "Contas Conectadas",
               value: stats.accounts,
               icon: Users,
-              description: "Contas do Threads conectadas"
+              description: "Contas do Threads"
             },
             {
               title: "Frases Cadastradas",
               value: stats.phrases,
               icon: MessageSquare,
-              description: "Frases disponíveis para posts"
+              description: "Frases disponíveis"
             },
             {
               title: "Posts Periódicos",
               value: stats.periodicPosts,
               icon: Calendar,
-              description: "Automações configuradas"
+              description: "Automações ativas"
             },
             {
               title: "Posts Hoje",
               value: stats.postsToday,
               icon: Sparkles,
-              description: "Posts realizados hoje"
+              description: "Posts realizados"
             }
           ].map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.title} className="border-2 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                  <Icon className="h-4 w-4 text-primary" />
+              <Card 
+                key={stat.title} 
+                className="border border-border/40 shadow-apple hover:shadow-apple-md transition-all duration-300 ease-out hover:-translate-y-0.5"
+              >
+                <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6">
+                  <CardTitle className="text-[13px] font-medium text-muted-foreground tracking-normal">
+                    {stat.title}
+                  </CardTitle>
+                  <div className="p-2 rounded-xl bg-primary/[0.08]">
+                    <Icon className="h-[18px] w-[18px] text-primary" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-primary">
+                <CardContent className="pb-6">
+                  <div className="text-[36px] font-semibold text-primary leading-none mb-2">
                     {stat.value}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-[13px] text-muted-foreground">
                     {stat.description}
                   </p>
                 </CardContent>
@@ -149,28 +156,30 @@ const Dashboard = () => {
           })}
         </div>
 
-        <Card className="border-2 overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-32 translate-x-32" />
-          <CardHeader className="relative">
-            <CardTitle>Bem-vindo ao AutoThreads!</CardTitle>
-            <CardDescription>
+        <Card className="border border-border/40 shadow-apple overflow-hidden relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-transparent pointer-events-none" />
+          <CardHeader className="relative pb-4 pt-7">
+            <CardTitle className="text-[17px] font-semibold">Bem-vindo ao AutoThreads!</CardTitle>
+            <CardDescription className="text-[14px] mt-1.5">
               Comece configurando suas contas e frases para automatizar seus posts
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 relative">
-            <div className="space-y-3">
-              <h3 className="font-semibold">Próximos passos:</h3>
-              <ul className="space-y-2">
+          <CardContent className="relative pb-7">
+            <div className="space-y-4">
+              <h3 className="text-[15px] font-medium">Próximos passos</h3>
+              <ul className="space-y-3">
                 {[
-                  { text: "Conecte suas contas do Threads na aba 'Contas'", icon: Users },
-                  { text: "Adicione frases que deseja postar na aba 'Frases'", icon: MessageSquare },
-                  { text: "Configure posts periódicos na aba 'Posts Periódicos'", icon: Calendar }
+                  { text: "Conecte suas contas do Threads", icon: Users },
+                  { text: "Adicione frases que deseja postar", icon: MessageSquare },
+                  { text: "Configure posts periódicos", icon: Calendar }
                 ].map((step) => {
                   const Icon = step.icon;
                   return (
-                    <li key={step.text} className="flex items-start gap-3 text-sm text-muted-foreground">
-                      <Icon className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                      <span>{step.text}</span>
+                    <li key={step.text} className="flex items-start gap-3 text-[14px] text-muted-foreground">
+                      <div className="p-1.5 rounded-lg bg-primary/[0.08] mt-0.5 flex-shrink-0">
+                        <Icon className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <span className="leading-relaxed">{step.text}</span>
                     </li>
                   );
                 })}
@@ -179,31 +188,37 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              Histórico de Posts
-            </CardTitle>
-            <CardDescription>
-              Últimos posts realizados
-            </CardDescription>
+        <Card className="border border-border/40 shadow-apple">
+          <CardHeader className="pb-4 pt-7">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-primary/[0.08]">
+                <MessageSquare className="h-[18px] w-[18px] text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-[17px] font-semibold">Histórico de Posts</CardTitle>
+                <CardDescription className="text-[13px] mt-0.5">
+                  Últimos posts realizados
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-7">
             {postHistory.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageSquare className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Nenhum post realizado ainda</p>
+              <div className="text-center py-12">
+                <div className="p-4 rounded-2xl bg-muted/30 w-fit mx-auto mb-4">
+                  <MessageSquare className="h-10 w-10 text-muted-foreground/40" />
+                </div>
+                <p className="text-[14px] text-muted-foreground">Nenhum post realizado ainda</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {postHistory.map((post) => (
                   <div
                     key={post.id}
-                    className="border-l-2 border-primary/50 pl-4 py-3 hover:border-primary hover:bg-primary/5 transition-all duration-300 rounded-r-lg"
+                    className="group p-4 rounded-xl border border-border/40 hover:border-border hover:shadow-apple transition-all duration-200 ease-out"
                   >
-                    <p className="font-medium">{post.content}</p>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                    <p className="text-[14px] font-medium leading-relaxed">{post.content}</p>
+                    <div className="flex items-center gap-5 mt-3 text-[13px] text-muted-foreground">
                       <span className="flex items-center gap-1.5">
                         <Users className="h-3.5 w-3.5" />
                         {post.account_username || "Conta desconhecida"}
