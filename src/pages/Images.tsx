@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Trash2, Edit, Loader2, ImageIcon, FolderInput } from "lucide-react";
+import { Upload, Trash2, Edit, Loader2, ImageIcon, FolderInput as FolderInputIcon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { FolderManager } from "@/components/FolderManager";
@@ -251,6 +251,36 @@ const Images = () => {
     }
   };
 
+  const handleMoveToFolder = async (imageId: string, folderId: string | null) => {
+    try {
+      const { error } = await supabase
+        .from("images")
+        .update({ folder_id: folderId })
+        .eq("id", imageId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Imagem movida!",
+        description: folderId ? "Imagem movida para a pasta." : "Imagem movida para raiz.",
+      });
+
+      setMovingImageId(null);
+      setTargetFolderId("none");
+      await Promise.all([loadImages(), loadFolders()]);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao mover imagem",
+        description: error.message,
+      });
+    }
+  };
+
+  const filteredImages = selectedFolder === null 
+    ? images 
+    : images.filter(img => img.folder_id === selectedFolder);
+
   return (
     <Layout>
       <div className="space-y-8">
@@ -289,6 +319,17 @@ const Images = () => {
           </div>
         </div>
 
+        <FolderManager
+          folders={folders}
+          type="image"
+          selectedFolder={selectedFolder}
+          onFolderSelect={setSelectedFolder}
+          onFoldersUpdate={() => {
+            loadFolders();
+            loadImages();
+          }}
+        />
+
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
@@ -297,6 +338,15 @@ const Images = () => {
               </Card>
             ))}
           </div>
+        ) : filteredImages.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                {selectedFolder ? "Nenhuma imagem nesta pasta" : "Nenhuma imagem cadastrada ainda"}
+              </p>
+            </CardContent>
+          </Card>
         ) : images.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
@@ -326,7 +376,7 @@ const Images = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {images.map((image) => (
+            {filteredImages.map((image) => (
               <Card key={image.id} className="overflow-hidden group">
                 <div className="relative aspect-square">
                   <img
@@ -335,6 +385,52 @@ const Images = () => {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Dialog open={movingImageId === image.id} onOpenChange={(open) => {
+                      if (!open) {
+                        setMovingImageId(null);
+                        setTargetFolderId("none");
+                      }
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={() => setMovingImageId(image.id)}
+                        >
+                          <FolderInputIcon className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Mover para Pasta</DialogTitle>
+                          <DialogDescription>
+                            Selecione a pasta de destino
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <Select value={targetFolderId} onValueChange={setTargetFolderId}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma pasta" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sem pasta (raiz)</SelectItem>
+                              {folders.map((folder) => (
+                                <SelectItem key={folder.id} value={folder.id}>
+                                  {folder.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            onClick={() => handleMoveToFolder(image.id, targetFolderId === "none" ? null : targetFolderId)}
+                            className="w-full"
+                          >
+                            Mover
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
                     <Dialog open={editingImage?.id === image.id} onOpenChange={(open) => {
                       if (!open) {
                         setEditingImage(null);
