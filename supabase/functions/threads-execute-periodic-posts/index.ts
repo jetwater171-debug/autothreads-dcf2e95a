@@ -65,14 +65,20 @@ Deno.serve(async (req) => {
         // 3. Obter imagem(ns) (se necessário)
         const imageUrls = await getImagesForPost(supabase, post);
 
-        // 4. Delay inteligente
+        // 4. Delay inteligente (5-20 segundos para não atrasar muito)
         if (post.use_intelligent_delay) {
-          const delaySec = Math.floor(Math.random() * 91) + 30; // 30–120s
+          const delaySec = Math.floor(Math.random() * 16) + 5; // 5-20s
           console.log(`⌛ Delay inteligente: ${delaySec}s`);
           await sleep(delaySec * 1000);
         }
 
-        // 5. Criar post chamando sua function oficial
+        // 5. Atualizar last_posted_at ANTES de criar o post (evita duplicação)
+        await supabase
+          .from("periodic_posts")
+          .update({ last_posted_at: now.toISOString() })
+          .eq("id", post.id);
+
+        // 6. Criar post chamando sua function oficial
         const createPostUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/threads-create-post`;
 
         const createResponse = await fetch(createPostUrl, {
@@ -100,7 +106,7 @@ Deno.serve(async (req) => {
         console.log(`✅ Publicado com sucesso!`);
         console.log(`   Threads ID: ${createData.postId}`);
 
-        // 6. Registrar histórico
+        // 7. Registrar histórico
         await supabase.from("post_history").insert({
           user_id: post.user_id,
           account_id: post.account_id,
@@ -111,12 +117,6 @@ Deno.serve(async (req) => {
           threads_post_id: createData.postId,
           posted_at: now.toISOString(),
         });
-
-        // 7. Atualizar last_posted_at
-        await supabase
-          .from("periodic_posts")
-          .update({ last_posted_at: now.toISOString() })
-          .eq("id", post.id);
 
         results.push({
           postId: post.id,
