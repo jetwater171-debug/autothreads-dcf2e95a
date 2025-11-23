@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   ArrowRight, 
   ArrowLeft, 
@@ -22,7 +23,8 @@ import {
   Target,
   CheckCircle2,
   AlertCircle,
-  Loader2
+  Loader2,
+  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -240,7 +242,8 @@ export function PeriodicPostWizard({
   const progressPercentage = (currentStep / 4) * 100;
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <TooltipProvider>
+      <div className="w-full max-w-5xl mx-auto">
       {/* Header com Progress */}
       <div className="mb-8 space-y-6">
         <div className="flex items-center justify-between">
@@ -392,8 +395,16 @@ export function PeriodicPostWizard({
                   </div>
 
                   <div className="space-y-3">
-                    <Label htmlFor="campaign" className="text-base font-semibold">
+                    <Label htmlFor="campaign" className="text-base font-semibold flex items-center gap-2">
                       Campanha <span className="text-muted-foreground font-normal">(opcional)</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Permite agrupar múltiplas automações sob uma mesma estratégia.</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </Label>
                     <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
                       <SelectTrigger className="h-12">
@@ -415,6 +426,14 @@ export function PeriodicPostWizard({
                   <Label htmlFor="interval" className="text-base font-semibold flex items-center gap-2">
                     <Clock className="h-4 w-4 text-primary" />
                     Intervalo entre Posts
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Tempo em minutos entre cada postagem automática.</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <div className="flex gap-3">
                     <Input
@@ -441,8 +460,16 @@ export function PeriodicPostWizard({
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <Label htmlFor="delay" className="text-base font-semibold cursor-pointer">
+                        <Label htmlFor="delay" className="text-base font-semibold cursor-pointer flex items-center gap-2">
                           Delay Inteligente
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">Adiciona variação aleatória no horário de postagem para simular comportamento humano.</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </Label>
                         <p className="text-sm text-muted-foreground">
                           Varia automaticamente o horário para parecer mais natural
@@ -635,8 +662,16 @@ export function PeriodicPostWizard({
                       {useText && (
                         <div className="space-y-4 pt-4 border-t animate-in fade-in-50">
                           <div className="flex items-center justify-between p-3 rounded-lg bg-background/60 border">
-                            <Label htmlFor="randomPhrase" className="text-sm font-medium cursor-pointer">
+                            <Label htmlFor="randomPhrase" className="text-sm font-medium cursor-pointer flex items-center gap-2">
                               Frase Aleatória
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="max-w-xs">O sistema escolhe automaticamente uma frase da pasta selecionada.</p>
+                                </TooltipContent>
+                              </Tooltip>
                             </Label>
                             <Switch
                               id="randomPhrase"
@@ -717,8 +752,16 @@ export function PeriodicPostWizard({
                 {postType === 'text' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 rounded-lg bg-muted/60 border">
-                      <Label htmlFor="randomPhraseText" className="text-base font-semibold cursor-pointer">
+                      <Label htmlFor="randomPhraseText" className="text-base font-semibold cursor-pointer flex items-center gap-2">
                         Frase Aleatória
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">O sistema escolhe automaticamente uma frase da pasta selecionada.</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </Label>
                       <Switch
                         id="randomPhraseText"
@@ -796,8 +839,16 @@ export function PeriodicPostWizard({
                 {postType === 'image' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 rounded-lg bg-muted/60 border">
-                      <Label htmlFor="randomImage" className="text-base font-semibold cursor-pointer">
+                      <Label htmlFor="randomImage" className="text-base font-semibold cursor-pointer flex items-center gap-2">
                         Imagem Aleatória
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Escolhe uma imagem da pasta selecionada ou do acervo completo.</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </Label>
                       <Switch
                         id="randomImage"
@@ -1076,6 +1127,7 @@ export function PeriodicPostWizard({
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
