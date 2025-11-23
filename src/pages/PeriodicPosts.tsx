@@ -810,6 +810,28 @@ const PeriodicPosts = () => {
                             />
                           </div>
 
+                          {useRandomPhrase && (
+                            <div className="space-y-3 animate-in fade-in-50 slide-in-from-top-3">
+                              <Label htmlFor="randomPhraseFolderText" className="text-sm font-medium flex items-center gap-2">
+                                <span>📁</span>
+                                Escolher pasta (opcional)
+                              </Label>
+                              <Select value={selectedRandomPhraseFolder || "all"} onValueChange={(v) => setSelectedRandomPhraseFolder(v === "all" ? null : v)}>
+                                <SelectTrigger className="h-10 border-border/60 hover:border-primary/50 transition-colors">
+                                  <SelectValue placeholder="Todas as pastas" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">Todas as pastas</SelectItem>
+                                  {phraseFolders.map((folder) => (
+                                    <SelectItem key={folder.id} value={folder.id}>
+                                      {folder.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
                           {!useRandomPhrase && (
                             <div className="space-y-3 animate-in fade-in-50 slide-in-from-top-3">
                               <Label htmlFor="phraseFolder" className="text-sm font-medium flex items-center gap-2">
