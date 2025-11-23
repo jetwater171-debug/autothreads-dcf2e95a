@@ -70,6 +70,39 @@ export type Database = {
           },
         ]
       }
+      campaigns: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          start_date: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          start_date: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          start_date?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       images: {
         Row: {
           alt_text: string | null
@@ -106,6 +139,7 @@ export type Database = {
       periodic_posts: {
         Row: {
           account_id: string
+          campaign_id: string | null
           carousel_image_ids: string[] | null
           created_at: string | null
           id: string
@@ -124,6 +158,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          campaign_id?: string | null
           carousel_image_ids?: string[] | null
           created_at?: string | null
           id?: string
@@ -142,6 +177,7 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          campaign_id?: string | null
           carousel_image_ids?: string[] | null
           created_at?: string | null
           id?: string
@@ -164,6 +200,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "threads_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodic_posts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
             referencedColumns: ["id"]
           },
           {
