@@ -186,6 +186,7 @@ Deno.serve(async (req) => {
             text: phraseContent,
             imageUrls: imageUrls,
             postType: post.post_type,
+            userId: post.user_id,
           }),
         });
 
