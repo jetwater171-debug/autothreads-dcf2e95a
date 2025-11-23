@@ -311,29 +311,39 @@ const PeriodicPosts = () => {
                 Nova Automação
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Nova Automação</DialogTitle>
-                <DialogDescription>
-                  Configure posts automáticos para sua conta do Threads
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-background via-background to-muted/20">
+              <DialogHeader className="space-y-3 pb-6 border-b">
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  ✨ Nova Automação
+                </DialogTitle>
+                <DialogDescription className="text-base">
+                  Configure posts automáticos inteligentes para sua conta do Threads
                 </DialogDescription>
               </DialogHeader>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-8 pt-2">
                 {/* Configurações Básicas */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
-                    Configurações Básicas
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/25">
+                      <span className="text-sm font-bold">1</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-base">Configurações Básicas</h3>
+                      <p className="text-xs text-muted-foreground">Conta e frequência de postagem</p>
+                    </div>
                   </div>
                   
-                  <Card className="border-muted">
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="account">Conta do Threads</Label>
+                  <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="pt-6 space-y-5">
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div className="space-y-3">
+                          <Label htmlFor="account" className="text-sm font-medium flex items-center gap-2">
+                            <span className="text-base">👤</span>
+                            Conta do Threads
+                          </Label>
                           <Select value={selectedAccount} onValueChange={setSelectedAccount} required>
-                            <SelectTrigger className="h-11">
+                            <SelectTrigger className="h-12 border-border/60 hover:border-primary/50 transition-colors">
                               <SelectValue placeholder="Selecione uma conta">
                                 {selectedAccount && accounts.find(a => a.id === selectedAccount) && (
                                   <div className="flex items-center gap-2">
@@ -367,9 +377,12 @@ const PeriodicPosts = () => {
                           </Select>
                         </div>
 
-                        <div className="space-y-2">
-                          <Label htmlFor="interval">Intervalo entre posts</Label>
-                          <div className="flex gap-2">
+                        <div className="space-y-3">
+                          <Label htmlFor="interval" className="text-sm font-medium flex items-center gap-2">
+                            <span className="text-base">⏱️</span>
+                            Intervalo entre posts
+                          </Label>
+                          <div className="flex gap-3">
                             <Input
                               id="interval"
                               type="number"
@@ -377,20 +390,24 @@ const PeriodicPosts = () => {
                               value={intervalMinutes}
                               onChange={(e) => setIntervalMinutes(e.target.value)}
                               required
-                              className="h-11"
+                              className="h-12 border-border/60 hover:border-primary/50 transition-colors"
+                              placeholder="10"
                             />
-                            <div className="flex items-center px-3 border rounded-md bg-muted text-muted-foreground text-sm whitespace-nowrap">
+                            <div className="flex items-center px-4 border rounded-lg bg-muted/80 text-muted-foreground text-sm font-medium whitespace-nowrap">
                               minutos
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="delay" className="text-sm font-medium">Delay Inteligente</Label>
-                          <p className="text-xs text-muted-foreground">
-                            Adiciona variação aleatória no horário (±15 min)
+                      <div className="relative overflow-hidden flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 hover:border-primary/30 transition-all">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">🎯</span>
+                            <Label htmlFor="delay" className="text-sm font-semibold">Delay Inteligente</Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground pl-6">
+                            Varia o horário automaticamente para parecer mais humano
                           </p>
                         </div>
                         <Switch
@@ -404,60 +421,104 @@ const PeriodicPosts = () => {
                 </div>
 
                 {/* Tipo de Conteúdo */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</div>
-                    Tipo de Conteúdo
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/25">
+                      <span className="text-sm font-bold">2</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-base">Tipo de Conteúdo</h3>
+                      <p className="text-xs text-muted-foreground">Escolha o formato do seu post</p>
+                    </div>
                   </div>
                   
-                  <Card className="border-muted">
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="grid grid-cols-3 gap-3">
+                  <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="pt-6 space-y-6">
+                      <div className="grid grid-cols-3 gap-4">
                         <button
                           type="button"
                           onClick={() => setPostType('text')}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                          className={`group relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-300 ${
                             postType === 'text'
-                              ? 'border-primary bg-primary/5'
-                              : 'border-muted hover:border-muted-foreground/30'
+                              ? 'border-primary bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg shadow-primary/20 scale-105'
+                              : 'border-border/40 hover:border-primary/40 hover:bg-muted/30'
                           }`}
                         >
-                          <span className="text-2xl">📝</span>
-                          <span className="text-sm font-medium">Texto</span>
+                          <div className={`text-4xl transition-transform duration-300 ${
+                            postType === 'text' ? 'scale-110' : 'group-hover:scale-110'
+                          }`}>
+                            📝
+                          </div>
+                          <div className="text-center">
+                            <span className="text-sm font-semibold block">Texto</span>
+                            <span className="text-xs text-muted-foreground">Apenas texto</span>
+                          </div>
+                          {postType === 'text' && (
+                            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-lg">
+                              <CheckCircle className="h-4 w-4" />
+                            </div>
+                          )}
                         </button>
                         
                         <button
                           type="button"
                           onClick={() => setPostType('image')}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                          className={`group relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-300 ${
                             postType === 'image'
-                              ? 'border-primary bg-primary/5'
-                              : 'border-muted hover:border-muted-foreground/30'
+                              ? 'border-primary bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg shadow-primary/20 scale-105'
+                              : 'border-border/40 hover:border-primary/40 hover:bg-muted/30'
                           }`}
                         >
-                          <span className="text-2xl">🖼️</span>
-                          <span className="text-sm font-medium">Imagem</span>
+                          <div className={`text-4xl transition-transform duration-300 ${
+                            postType === 'image' ? 'scale-110' : 'group-hover:scale-110'
+                          }`}>
+                            🖼️
+                          </div>
+                          <div className="text-center">
+                            <span className="text-sm font-semibold block">Imagem</span>
+                            <span className="text-xs text-muted-foreground">Foto + texto</span>
+                          </div>
+                          {postType === 'image' && (
+                            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-lg">
+                              <CheckCircle className="h-4 w-4" />
+                            </div>
+                          )}
                         </button>
                         
                         <button
                           type="button"
                           onClick={() => setPostType('carousel')}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                          className={`group relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-300 ${
                             postType === 'carousel'
-                              ? 'border-primary bg-primary/5'
-                              : 'border-muted hover:border-muted-foreground/30'
+                              ? 'border-primary bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg shadow-primary/20 scale-105'
+                              : 'border-border/40 hover:border-primary/40 hover:bg-muted/30'
                           }`}
                         >
-                          <span className="text-2xl">🎠</span>
-                          <span className="text-sm font-medium">Carrossel</span>
+                          <div className={`text-4xl transition-transform duration-300 ${
+                            postType === 'carousel' ? 'scale-110' : 'group-hover:scale-110'
+                          }`}>
+                            🎠
+                          </div>
+                          <div className="text-center">
+                            <span className="text-sm font-semibold block">Carrossel</span>
+                            <span className="text-xs text-muted-foreground">Múltiplas fotos</span>
+                          </div>
+                          {postType === 'carousel' && (
+                            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-lg">
+                              <CheckCircle className="h-4 w-4" />
+                            </div>
+                          )}
                         </button>
                       </div>
 
                       {/* Configurações de Texto */}
                       {postType === 'text' && (
-                        <div className="space-y-4 pt-4 border-t">
-                          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                            <Label htmlFor="random" className="text-sm font-medium">Frase Aleatória</Label>
+                        <div className="space-y-4 pt-6 border-t border-border/50">
+                          <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/80 to-muted/40 border border-border/40">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl">🎲</span>
+                              <Label htmlFor="random" className="text-sm font-medium cursor-pointer">Frase Aleatória</Label>
+                            </div>
                             <Switch
                               id="random"
                               checked={useRandomPhrase}
@@ -466,10 +527,13 @@ const PeriodicPosts = () => {
                           </div>
 
                           {!useRandomPhrase && (
-                            <div className="space-y-2">
-                              <Label htmlFor="phrase">Selecione uma frase</Label>
+                            <div className="space-y-3 animate-in fade-in-50 slide-in-from-top-3">
+                              <Label htmlFor="phrase" className="text-sm font-medium flex items-center gap-2">
+                                <span>💭</span>
+                                Selecione uma frase
+                              </Label>
                               <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
-                                <SelectTrigger>
+                                <SelectTrigger className="h-11 border-border/60 hover:border-primary/50 transition-colors">
                                   <SelectValue placeholder="Escolha a frase que será postada" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -487,31 +551,40 @@ const PeriodicPosts = () => {
 
                       {/* Configurações de Imagem */}
                       {postType === 'image' && (
-                        <div className="space-y-4 pt-4 border-t">
+                        <div className="space-y-5 pt-6 border-t border-border/50">
                           {images.length === 0 ? (
-                            <div className="p-4 text-center text-sm text-muted-foreground bg-muted/50 rounded-lg">
+                            <div className="p-6 text-center text-sm text-muted-foreground bg-muted/50 rounded-xl border-2 border-dashed border-border">
+                              <span className="text-3xl mb-2 block">📸</span>
                               Você precisa cadastrar pelo menos 1 imagem na aba Imagens
                             </div>
                           ) : (
                             <>
                               {/* Seção de Texto (Destaque) */}
-                              <div className="space-y-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                              <div className="relative overflow-hidden space-y-4 p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/10 to-primary/5 border-2 border-primary/30 shadow-lg">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -z-10" />
                                 <div className="flex items-center justify-between">
-                                  <div className="space-y-1">
-                                    <Label htmlFor="useText" className="text-sm font-semibold">💬 Texto da Legenda</Label>
-                                    <p className="text-xs text-muted-foreground">Recomendado para melhor engajamento</p>
+                                  <div className="space-y-1.5">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-2xl">💬</span>
+                                      <Label htmlFor="useText" className="text-base font-bold">Texto da Legenda</Label>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground pl-8">Recomendado para melhor engajamento</p>
                                   </div>
                                   <Switch
                                     id="useText"
                                     checked={useText}
                                     onCheckedChange={setUseText}
+                                    className="data-[state=checked]:bg-primary"
                                   />
                                 </div>
 
                                 {useText && (
-                                  <div className="space-y-3 pt-2">
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-background">
-                                      <Label htmlFor="randomPhrase" className="text-sm font-medium">Frase Aleatória</Label>
+                                  <div className="space-y-3 pt-3 animate-in fade-in-50 slide-in-from-top-3">
+                                    <div className="flex items-center justify-between p-4 rounded-xl bg-background/80 backdrop-blur border border-border/50">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-lg">🎲</span>
+                                        <Label htmlFor="randomPhrase" className="text-sm font-medium">Frase Aleatória</Label>
+                                      </div>
                                       <Switch
                                         id="randomPhrase"
                                         checked={useRandomPhrase}
@@ -520,10 +593,13 @@ const PeriodicPosts = () => {
                                     </div>
 
                                     {!useRandomPhrase && (
-                                      <div className="space-y-2">
-                                        <Label htmlFor="phrase">Selecione uma frase</Label>
+                                      <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">
+                                        <Label htmlFor="phrase" className="text-sm font-medium flex items-center gap-2">
+                                          <span>💭</span>
+                                          Selecione uma frase
+                                        </Label>
                                         <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
-                                          <SelectTrigger className="bg-background">
+                                          <SelectTrigger className="bg-background h-11 border-border/60 hover:border-primary/50 transition-colors">
                                             <SelectValue placeholder="Escolha a frase" />
                                           </SelectTrigger>
                                           <SelectContent>
@@ -541,9 +617,12 @@ const PeriodicPosts = () => {
                               </div>
 
                               {/* Seção de Imagem */}
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                                  <Label htmlFor="randomImage" className="text-sm font-medium">Imagem Aleatória</Label>
+                              <div className="space-y-4 p-5 rounded-2xl bg-muted/30 border border-border/40">
+                                <div className="flex items-center justify-between p-4 rounded-xl bg-background/50 backdrop-blur">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">🎲</span>
+                                    <Label htmlFor="randomImage" className="text-sm font-medium">Imagem Aleatória</Label>
+                                  </div>
                                   <Switch
                                     id="randomImage"
                                     checked={useRandomImage}
@@ -552,18 +631,21 @@ const PeriodicPosts = () => {
                                 </div>
 
                                 {!useRandomImage && (
-                                  <div className="space-y-2">
-                                    <Label htmlFor="image">Selecione uma imagem</Label>
+                                  <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">
+                                    <Label htmlFor="image" className="text-sm font-medium flex items-center gap-2">
+                                      <span>🖼️</span>
+                                      Selecione uma imagem
+                                    </Label>
                                     <Select value={selectedImage} onValueChange={setSelectedImage} required>
-                                      <SelectTrigger>
+                                      <SelectTrigger className="h-11 border-border/60 hover:border-primary/50 transition-colors bg-background">
                                         <SelectValue placeholder="Escolha a imagem" />
                                       </SelectTrigger>
                                       <SelectContent>
                                         {images.map((image) => (
                                           <SelectItem key={image.id} value={image.id}>
-                                            <div className="flex items-center gap-2">
-                                              <img src={image.public_url} className="h-8 w-8 object-cover rounded" alt="" />
-                                              <span className="truncate">{image.file_name}</span>
+                                            <div className="flex items-center gap-3">
+                                              <img src={image.public_url} className="h-10 w-10 object-cover rounded-lg border-2 border-border" alt="" />
+                                              <span className="truncate font-medium">{image.file_name}</span>
                                             </div>
                                           </SelectItem>
                                         ))}
@@ -579,31 +661,40 @@ const PeriodicPosts = () => {
 
                       {/* Configurações de Carrossel */}
                       {postType === 'carousel' && (
-                        <div className="space-y-4 pt-4 border-t">
+                        <div className="space-y-5 pt-6 border-t border-border/50">
                           {images.length < 2 ? (
-                            <div className="p-4 text-center text-sm text-muted-foreground bg-muted/50 rounded-lg">
+                            <div className="p-6 text-center text-sm text-muted-foreground bg-muted/50 rounded-xl border-2 border-dashed border-border">
+                              <span className="text-3xl mb-2 block">🎠</span>
                               Você precisa cadastrar pelo menos 2 imagens na aba Imagens
                             </div>
                           ) : (
                             <>
                               {/* Seção de Texto (Destaque) */}
-                              <div className="space-y-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                              <div className="relative overflow-hidden space-y-4 p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/10 to-primary/5 border-2 border-primary/30 shadow-lg">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -z-10" />
                                 <div className="flex items-center justify-between">
-                                  <div className="space-y-1">
-                                    <Label htmlFor="useTextCarousel" className="text-sm font-semibold">💬 Texto da Legenda</Label>
-                                    <p className="text-xs text-muted-foreground">Recomendado para melhor engajamento</p>
+                                  <div className="space-y-1.5">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-2xl">💬</span>
+                                      <Label htmlFor="useTextCarousel" className="text-base font-bold">Texto da Legenda</Label>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground pl-8">Recomendado para melhor engajamento</p>
                                   </div>
                                   <Switch
                                     id="useTextCarousel"
                                     checked={useText}
                                     onCheckedChange={setUseText}
+                                    className="data-[state=checked]:bg-primary"
                                   />
                                 </div>
 
                                 {useText && (
-                                  <div className="space-y-3 pt-2">
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-background">
-                                      <Label htmlFor="randomPhraseCarousel" className="text-sm font-medium">Frase Aleatória</Label>
+                                  <div className="space-y-3 pt-3 animate-in fade-in-50 slide-in-from-top-3">
+                                    <div className="flex items-center justify-between p-4 rounded-xl bg-background/80 backdrop-blur border border-border/50">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-lg">🎲</span>
+                                        <Label htmlFor="randomPhraseCarousel" className="text-sm font-medium">Frase Aleatória</Label>
+                                      </div>
                                       <Switch
                                         id="randomPhraseCarousel"
                                         checked={useRandomPhrase}
@@ -612,10 +703,13 @@ const PeriodicPosts = () => {
                                     </div>
 
                                     {!useRandomPhrase && (
-                                      <div className="space-y-2">
-                                        <Label htmlFor="phraseCarousel">Selecione uma frase</Label>
+                                      <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">
+                                        <Label htmlFor="phraseCarousel" className="text-sm font-medium flex items-center gap-2">
+                                          <span>💭</span>
+                                          Selecione uma frase
+                                        </Label>
                                         <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
-                                          <SelectTrigger className="bg-background">
+                                          <SelectTrigger className="bg-background h-11 border-border/60 hover:border-primary/50 transition-colors">
                                             <SelectValue placeholder="Escolha a frase" />
                                           </SelectTrigger>
                                           <SelectContent>
@@ -633,23 +727,28 @@ const PeriodicPosts = () => {
                               </div>
 
                               {/* Seção de Imagens do Carrossel */}
-                              <div className="space-y-2">
+                              <div className="space-y-4 p-5 rounded-2xl bg-muted/30 border border-border/40">
                                 <div className="flex items-center justify-between">
-                                  <Label>Selecione as imagens</Label>
-                                  <span className="text-xs text-muted-foreground">
-                                    {carouselImages.length}/10 selecionadas
-                                  </span>
+                                  <Label className="text-sm font-semibold flex items-center gap-2">
+                                    <span className="text-lg">🎠</span>
+                                    Selecione as imagens
+                                  </Label>
+                                  <div className="px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
+                                    <span className="text-xs font-bold text-primary">
+                                      {carouselImages.length}/10
+                                    </span>
+                                  </div>
                                 </div>
-                                <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto p-3 border rounded-lg bg-muted/30">
+                                <div className="grid grid-cols-4 gap-3 max-h-72 overflow-y-auto p-4 border-2 border-dashed rounded-xl bg-background/50 backdrop-blur">
                                   {images.map((image) => (
                                     <button
                                       type="button"
                                       key={image.id}
                                       onClick={() => toggleCarouselImage(image.id)}
-                                      className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all aspect-square ${
+                                      className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-300 aspect-square hover:scale-105 ${
                                         carouselImages.includes(image.id)
-                                          ? 'border-primary ring-2 ring-primary/20'
-                                          : 'border-transparent hover:border-muted-foreground/30'
+                                          ? 'border-primary ring-4 ring-primary/30 shadow-lg shadow-primary/20'
+                                          : 'border-transparent hover:border-primary/30 hover:shadow-md'
                                       }`}
                                     >
                                       <img
@@ -658,8 +757,8 @@ const PeriodicPosts = () => {
                                         className="w-full h-full object-cover"
                                       />
                                       {carouselImages.includes(image.id) && (
-                                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                          <div className="bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow-lg">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-primary/40 via-primary/20 to-transparent flex items-center justify-center">
+                                          <div className="bg-primary text-primary-foreground rounded-full w-9 h-9 flex items-center justify-center text-base font-bold shadow-2xl ring-2 ring-background">
                                             {carouselImages.indexOf(image.id) + 1}
                                           </div>
                                         </div>
@@ -668,7 +767,10 @@ const PeriodicPosts = () => {
                                   ))}
                                 </div>
                                 {carouselImages.length > 0 && carouselImages.length < 2 && (
-                                  <p className="text-xs text-destructive">Selecione pelo menos 2 imagens</p>
+                                  <p className="text-xs text-destructive font-medium flex items-center gap-1.5 px-3 py-2 bg-destructive/10 rounded-lg border border-destructive/30">
+                                    <span>⚠️</span>
+                                    Selecione pelo menos 2 imagens
+                                  </p>
                                 )}
                               </div>
                             </>
@@ -680,7 +782,7 @@ const PeriodicPosts = () => {
                 </div>
 
                 {/* Botões de Ação */}
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                <div className="flex justify-end gap-4 pt-6 border-t border-border/50">
                   <Button
                     type="button"
                     variant="outline"
@@ -688,11 +790,15 @@ const PeriodicPosts = () => {
                       setOpen(false);
                       resetForm();
                     }}
+                    className="px-8 h-11 hover:bg-muted/80 transition-all"
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" className="min-w-32">
-                    Criar Automação
+                  <Button 
+                    type="submit" 
+                    className="min-w-40 h-11 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all font-semibold"
+                  >
+                    ✨ Criar Automação
                   </Button>
                 </div>
               </form>
