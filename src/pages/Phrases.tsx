@@ -11,6 +11,8 @@ import { Plus, Trash2, Edit, FolderInput as FolderInputIcon } from "lucide-react
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FolderManager } from "@/components/FolderManager";
+import { DndContext, DragOverlay, DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core";
+import { DraggablePhrase } from "@/components/DraggablePhrase";
 
 interface Phrase {
   id: string;
@@ -36,6 +38,8 @@ const Phrases = () => {
   const [content, setContent] = useState("");
   const [movingPhraseId, setMovingPhraseId] = useState<string | null>(null);
   const [targetFolderId, setTargetFolderId] = useState<string>("none");
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -214,9 +218,44 @@ const Phrases = () => {
     ? phrases 
     : phrases.filter(p => p.folder_id === selectedFolder);
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverId(event.over?.id as string || null);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    setActiveId(null);
+    setOverId(null);
+
+    if (!over || active.id === over.id) return;
+
+    const phraseId = active.id as string;
+    const targetFolderId = over.id === 'root' ? null : (over.id as string);
+
+    await handleMoveToFolder(phraseId, targetFolderId);
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    setOverId(null);
+  };
+
+  const activePhrase = activeId ? phrases.find(p => p.id === activeId) : null;
+
   return (
     <Layout>
-      <div className="space-y-8">
+      <DndContext
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Frases</h1>
@@ -271,84 +310,76 @@ const Phrases = () => {
             loadFolders();
             loadPhrases();
           }}
+          overId={overId}
         />
 
         <div className="grid gap-4">
           {filteredPhrases.map((phrase) => (
-            <Card key={phrase.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-base font-normal flex-1">
-                    {phrase.content}
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    <Dialog open={movingPhraseId === phrase.id} onOpenChange={(open) => {
-                      if (!open) {
-                        setMovingPhraseId(null);
-                        setTargetFolderId("none");
-                      }
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setMovingPhraseId(phrase.id)}
-                        >
-                          <FolderInputIcon className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Mover para Pasta</DialogTitle>
-                          <DialogDescription>
-                            Selecione a pasta de destino
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <Select value={targetFolderId} onValueChange={setTargetFolderId}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma pasta" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Sem pasta (raiz)</SelectItem>
-                              {folders.map((folder) => (
-                                <SelectItem key={folder.id} value={folder.id}>
-                                  {folder.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button 
-                            onClick={() => handleMoveToFolder(phrase.id, targetFolderId === "none" ? null : targetFolderId)}
-                            className="w-full"
-                          >
-                            Mover
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(phrase)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(phrase.id)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
+            <DraggablePhrase
+              key={phrase.id}
+              id={phrase.id}
+              content={phrase.content}
+              isDragging={activeId === phrase.id}
+              onMove={() => setMovingPhraseId(phrase.id)}
+              onEdit={() => handleEdit(phrase)}
+              onDelete={() => handleDelete(phrase.id)}
+            />
           ))}
         </div>
+
+        {/* Dialog for Move */}
+        <Dialog open={!!movingPhraseId} onOpenChange={(open) => {
+          if (!open) {
+            setMovingPhraseId(null);
+            setTargetFolderId("none");
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Mover para Pasta</DialogTitle>
+              <DialogDescription>
+                Selecione a pasta de destino
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Select value={targetFolderId} onValueChange={setTargetFolderId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma pasta" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem pasta (raiz)</SelectItem>
+                  {folders.map((folder) => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={() => {
+                  if (movingPhraseId) {
+                    handleMoveToFolder(movingPhraseId, targetFolderId === "none" ? null : targetFolderId);
+                  }
+                }}
+                className="w-full"
+              >
+                Mover
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <DragOverlay>
+          {activePhrase && (
+            <Card className="opacity-90 shadow-2xl rotate-2">
+              <CardHeader>
+                <CardTitle className="text-base font-normal">
+                  {activePhrase.content}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          )}
+        </DragOverlay>
 
         {filteredPhrases.length === 0 && !loading && (
           <Card>
@@ -366,6 +397,7 @@ const Phrases = () => {
           </Card>
         )}
       </div>
+    </DndContext>
     </Layout>
   );
 };

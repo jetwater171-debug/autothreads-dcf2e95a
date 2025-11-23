@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Folder, FolderPlus, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useDroppable } from "@dnd-kit/core";
+import { cn } from "@/lib/utils";
 
 interface Folder {
   id: string;
@@ -22,9 +24,78 @@ interface FolderManagerProps {
   selectedFolder: string | null;
   onFolderSelect: (folderId: string | null) => void;
   onFoldersUpdate: () => void;
+  overId?: string | null;
 }
 
-export const FolderManager = ({ folders, type, selectedFolder, onFolderSelect, onFoldersUpdate }: FolderManagerProps) => {
+const DroppableFolder = ({ folder, isSelected, onSelect, onEdit, onDelete, isOver }: {
+  folder: Folder | null;
+  isSelected: boolean;
+  onSelect: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  isOver: boolean;
+}) => {
+  const { setNodeRef } = useDroppable({
+    id: folder?.id || 'root',
+  });
+
+  return (
+    <Card
+      ref={setNodeRef}
+      className={cn(
+        "p-4 cursor-pointer transition-all hover:shadow-md",
+        isSelected && "border-primary shadow-md",
+        isOver && "ring-2 ring-primary bg-primary/5 scale-105"
+      )}
+      onClick={onSelect}
+    >
+      <div className="flex items-center gap-3">
+        <Folder className={cn(
+          "h-8 w-8 flex-shrink-0",
+          folder ? "text-primary" : "text-muted-foreground"
+        )} />
+        <div className="flex-1 min-w-0">
+          <p className="font-medium truncate">{folder?.name || "Todos"}</p>
+          <p className="text-xs text-muted-foreground">
+            {folder ? `${folder.item_count || 0} ${folder.item_count === 1 ? "item" : "itens"}` : "Todos os itens"}
+          </p>
+        </div>
+        {folder && onEdit && onDelete && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="z-50 bg-background">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Renomear
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+export const FolderManager = ({ folders, type, selectedFolder, onFolderSelect, onFoldersUpdate, overId }: FolderManagerProps) => {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [folderName, setFolderName] = useState("");
@@ -174,70 +245,26 @@ export const FolderManager = ({ folders, type, selectedFolder, onFolderSelect, o
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <Card
-          className={`p-4 cursor-pointer transition-all hover:shadow-md ${
-            selectedFolder === null ? "border-primary shadow-md" : ""
-          }`}
-          onClick={() => onFolderSelect(null)}
-        >
-          <div className="flex items-center gap-3">
-            <Folder className="h-8 w-8 text-muted-foreground" />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">Todos</p>
-              <p className="text-xs text-muted-foreground">
-                Todos os itens
-              </p>
-            </div>
-          </div>
-        </Card>
+        <DroppableFolder
+          folder={null}
+          isSelected={selectedFolder === null}
+          onSelect={() => onFolderSelect(null)}
+          isOver={overId === 'root'}
+        />
 
         {folders.map((folder) => (
-          <Card
+          <DroppableFolder
             key={folder.id}
-            className={`p-4 cursor-pointer transition-all hover:shadow-md ${
-              selectedFolder === folder.id ? "border-primary shadow-md" : ""
-            }`}
-            onClick={() => onFolderSelect(folder.id)}
-          >
-            <div className="flex items-start gap-3">
-              <Folder className="h-8 w-8 text-primary flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{folder.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {folder.item_count || 0} {folder.item_count === 1 ? "item" : "itens"}
-                </p>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="z-50 bg-background">
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingFolder(folder);
-                      setFolderName(folder.name);
-                    }}
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Renomear
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteFolder(folder);
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Excluir
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </Card>
+            folder={folder}
+            isSelected={selectedFolder === folder.id}
+            onSelect={() => onFolderSelect(folder.id)}
+            onEdit={() => {
+              setEditingFolder(folder);
+              setFolderName(folder.name);
+            }}
+            onDelete={() => handleDeleteFolder(folder)}
+            isOver={overId === folder.id}
+          />
         ))}
       </div>
 
