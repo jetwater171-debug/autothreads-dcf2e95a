@@ -214,22 +214,22 @@ const ManualPost = () => {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-8 animate-fade-in">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Post Manual</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Post Manual</h1>
+          <p className="text-muted-foreground mt-2 text-base">
             Crie e publique um post imediatamente no Threads
           </p>
         </div>
 
-        <Card>
+        <Card className="border-2">
           <CardHeader>
-            <CardTitle>Criar Post</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl">Criar Post</CardTitle>
+            <CardDescription className="text-base">
               Selecione a conta, tipo de post e conteúdo
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="account">Conta do Threads</Label>
               <Select value={selectedAccount} onValueChange={setSelectedAccount}>
