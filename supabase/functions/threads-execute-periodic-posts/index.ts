@@ -7,6 +7,15 @@ const corsHeaders = {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Função para calcular hash SHA-256 do conteúdo
+async function calculateContentHash(content: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(content);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function createPostWithRetry(
   url: string,
   body: any,
@@ -138,20 +147,70 @@ Deno.serve(async (req) => {
         // 3. Obter imagem(ns) (se necessário)
         const imageUrls = await getImagesForPost(supabase, post);
 
-        // 4. Atualizar last_posted_at ANTES de criar o post (evita duplicação)
+        // 4. Calcular hash do conteúdo
+        let contentForHash = "";
+        if (post.post_type === "text") {
+          contentForHash = phraseContent;
+        } else if (post.post_type === "image") {
+          contentForHash = imageUrls.join("");
+        } else if (post.post_type === "carousel") {
+          contentForHash = imageUrls.join("|");
+        }
+
+        const contentHash = await calculateContentHash(contentForHash);
+
+        // 5. Verificar duplicação nos últimos 60 minutos
+        const sixtyMinutesAgo = new Date(now.getTime() - 60 * 60 * 1000);
+        const { data: duplicates } = await supabase
+          .from("post_history")
+          .select("id")
+          .eq("content_hash", contentHash)
+          .eq("user_id", post.user_id)
+          .gte("posted_at", sixtyMinutesAgo.toISOString())
+          .limit(1);
+
+        if (duplicates && duplicates.length > 0) {
+          console.log(`⚠️ Conteúdo duplicado detectado nos últimos 60 min — cancelando publicação`);
+          
+          // Registrar cancelamento por duplicação (sem atualizar last_posted_at)
+          await supabase.from("post_history").insert({
+            user_id: post.user_id,
+            account_id: post.account_id,
+            phrase_id: post.specific_phrase_id ?? null,
+            content: phraseContent,
+            image_urls: imageUrls,
+            post_type: post.post_type,
+            posted_at: now.toISOString(),
+            content_hash: contentHash,
+            duplicate_skipped: true,
+            error_message: "Execução cancelada — conteúdo idêntico postado recentemente.",
+            attempts: 0,
+          });
+
+          results.push({
+            postId: post.id,
+            success: false,
+            skipped: true,
+            reason: "duplicate_content",
+          });
+
+          continue;
+        }
+
+        // 6. Atualizar last_posted_at ANTES de criar o post (evita duplicação)
         await supabase
           .from("periodic_posts")
           .update({ last_posted_at: now.toISOString() })
           .eq("id", post.id);
 
-        // 5. Delay inteligente (diferente para cada post)
+        // 7. Delay inteligente (diferente para cada post)
         if (post.use_intelligent_delay) {
           const delaySec = Math.floor(Math.random() * 16) + 5; // 5-20s aleatório por post
           console.log(`⌛ Delay inteligente de ${delaySec}s para este post`);
           await sleep(delaySec * 1000);
         }
 
-        // 6. Criar post com retry automático
+        // 8. Criar post com retry automático
         const createPostUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/threads-create-post`;
         
         const result = await createPostWithRetry(
@@ -179,6 +238,7 @@ Deno.serve(async (req) => {
             image_urls: imageUrls,
             post_type: post.post_type,
             posted_at: now.toISOString(),
+            content_hash: contentHash,
             error_message: result.error,
             attempts: result.attempts,
           });
@@ -196,7 +256,7 @@ Deno.serve(async (req) => {
         console.log(`✅ Publicado com sucesso após ${result.attempts} tentativa(s)!`);
         console.log(`   Threads ID: ${result.data.postId}`);
 
-        // 7. Registrar histórico de sucesso
+        // 9. Registrar histórico de sucesso
         await supabase.from("post_history").insert({
           user_id: post.user_id,
           account_id: post.account_id,
@@ -206,6 +266,7 @@ Deno.serve(async (req) => {
           post_type: post.post_type,
           threads_post_id: result.data.postId,
           posted_at: now.toISOString(),
+          content_hash: contentHash,
           attempts: result.attempts,
         });
 
