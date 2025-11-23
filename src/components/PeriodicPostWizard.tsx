@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -303,10 +304,18 @@ export function PeriodicPostWizard({
       </div>
 
       {/* Step Content */}
-      <div className="min-h-[400px]">
-        {/* Step 1: Configurações Básicas */}
-        {currentStep === 1 && (
-          <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-5 duration-300">
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={currentStep}
+          initial={{ opacity: 0, x: "8%" }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: "-8%" }}
+          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+          className="min-h-[400px]"
+        >
+          {/* Step 1: Configurações Básicas */}
+          {currentStep === 1 && (
+            <div className="space-y-6">
             <div className="text-center space-y-2 pb-6">
               <Settings className="h-12 w-12 mx-auto text-primary" />
               <h3 className="text-2xl font-bold">{STEPS[0].title}</h3>
@@ -452,9 +461,9 @@ export function PeriodicPostWizard({
           </div>
         )}
 
-        {/* Step 2: Tipo de Conteúdo */}
-        {currentStep === 2 && (
-          <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-5 duration-300">
+          {/* Step 2: Tipo de Conteúdo */}
+          {currentStep === 2 && (
+            <div className="space-y-6">
             <div className="text-center space-y-2 pb-6">
               <Sparkles className="h-12 w-12 mx-auto text-primary" />
               <h3 className="text-2xl font-bold">{STEPS[1].title}</h3>
@@ -592,9 +601,9 @@ export function PeriodicPostWizard({
           </div>
         )}
 
-        {/* Step 3: Configuração do Conteúdo */}
-        {currentStep === 3 && (
-          <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-5 duration-300">
+          {/* Step 3: Configuração do Conteúdo */}
+          {currentStep === 3 && (
+            <div className="space-y-6">
             <div className="text-center space-y-2 pb-6">
               <Target className="h-12 w-12 mx-auto text-primary" />
               <h3 className="text-2xl font-bold">{STEPS[2].title}</h3>
@@ -931,9 +940,9 @@ export function PeriodicPostWizard({
           </div>
         )}
 
-        {/* Step 4: Revisão Final */}
-        {currentStep === 4 && (
-          <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-5 duration-300">
+          {/* Step 4: Revisão Final */}
+          {currentStep === 4 && (
+            <div className="space-y-6">
             <div className="text-center space-y-2 pb-6">
               <CheckCircle2 className="h-12 w-12 mx-auto text-primary" />
               <h3 className="text-2xl font-bold">{STEPS[3].title}</h3>
@@ -1029,7 +1038,8 @@ export function PeriodicPostWizard({
             </Card>
           </div>
         )}
-      </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Footer com Botões */}
       <div className="flex items-center justify-between pt-8 border-t mt-8">
