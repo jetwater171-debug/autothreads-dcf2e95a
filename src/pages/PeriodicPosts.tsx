@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface PeriodicPost {
   id: string;
@@ -310,284 +311,374 @@ const PeriodicPosts = () => {
                 Nova Automação
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Configurar Post Periódico</DialogTitle>
+                <DialogTitle>Nova Automação</DialogTitle>
                 <DialogDescription>
-                  Configure uma nova automação de postagens
+                  Configure posts automáticos para sua conta do Threads
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="account">Conta</Label>
-                  <Select value={selectedAccount} onValueChange={setSelectedAccount} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma conta">
-                        {selectedAccount && accounts.find(a => a.id === selectedAccount) && (
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage 
-                                src={accounts.find(a => a.id === selectedAccount)?.profile_picture_url || undefined} 
-                                alt={accounts.find(a => a.id === selectedAccount)?.username || "Profile"} 
-                              />
-                              <AvatarFallback>
-                                {accounts.find(a => a.id === selectedAccount)?.username?.charAt(0).toUpperCase() || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            {accounts.find(a => a.id === selectedAccount)?.username || accounts.find(a => a.id === selectedAccount)?.account_id}
-                          </div>
-                        )}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.username || account.account_id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="interval">Intervalo (minutos)</Label>
-                  <Input
-                    id="interval"
-                    type="number"
-                    min="1"
-                    value={intervalMinutes}
-                    onChange={(e) => setIntervalMinutes(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="postType">Tipo de Post</Label>
-                  <Select value={postType} onValueChange={(value: any) => setPostType(value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="text">📝 Apenas Texto</SelectItem>
-                      <SelectItem value="image">🖼️ Imagem (+ texto opcional)</SelectItem>
-                      <SelectItem value="carousel">🖼️🖼️ Carrossel (2-10 imagens + texto opcional)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {postType === 'text' && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="random">Frase Aleatória</Label>
-                      <Switch
-                        id="random"
-                        checked={useRandomPhrase}
-                        onCheckedChange={setUseRandomPhrase}
-                      />
-                    </div>
-
-                    {!useRandomPhrase && (
-                      <div className="space-y-2">
-                        <Label htmlFor="phrase">Frase Específica</Label>
-                        <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma frase" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {phrases.map((phrase) => (
-                              <SelectItem key={phrase.id} value={phrase.id}>
-                                {phrase.content.substring(0, 50)}...
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {postType === 'image' && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="randomImage">Imagem Aleatória</Label>
-                      <Switch
-                        id="randomImage"
-                        checked={useRandomImage}
-                        onCheckedChange={setUseRandomImage}
-                      />
-                    </div>
-
-                    {!useRandomImage && (
-                      <div className="space-y-2">
-                        <Label htmlFor="image">Selecionar Imagem</Label>
-                        <Select value={selectedImage} onValueChange={setSelectedImage} required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma imagem" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {images.map((image) => (
-                              <SelectItem key={image.id} value={image.id}>
-                                <div className="flex items-center gap-2">
-                                  <img src={image.public_url} className="h-8 w-8 object-cover rounded" alt="" />
-                                  {image.file_name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="useText">Adicionar Texto</Label>
-                      <Switch
-                        id="useText"
-                        checked={useText}
-                        onCheckedChange={setUseText}
-                      />
-                    </div>
-
-                    {useText && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="randomPhrase">Frase Aleatória</Label>
-                          <Switch
-                            id="randomPhrase"
-                            checked={useRandomPhrase}
-                            onCheckedChange={setUseRandomPhrase}
-                          />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Configurações Básicas */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
+                    Configurações Básicas
+                  </div>
+                  
+                  <Card className="border-muted">
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="account">Conta do Threads</Label>
+                          <Select value={selectedAccount} onValueChange={setSelectedAccount} required>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecione uma conta">
+                                {selectedAccount && accounts.find(a => a.id === selectedAccount) && (
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage 
+                                        src={accounts.find(a => a.id === selectedAccount)?.profile_picture_url || undefined} 
+                                        alt={accounts.find(a => a.id === selectedAccount)?.username || "Profile"} 
+                                      />
+                                      <AvatarFallback className="text-xs">
+                                        {accounts.find(a => a.id === selectedAccount)?.username?.charAt(0).toUpperCase() || "?"}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm">{accounts.find(a => a.id === selectedAccount)?.username || accounts.find(a => a.id === selectedAccount)?.account_id}</span>
+                                  </div>
+                                )}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {accounts.map((account) => (
+                                <SelectItem key={account.id} value={account.id}>
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-5 w-5">
+                                      <AvatarImage src={account.profile_picture_url || undefined} />
+                                      <AvatarFallback className="text-xs">{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
+                                    </Avatar>
+                                    {account.username || account.account_id}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
-                        {!useRandomPhrase && (
-                          <div className="space-y-2">
-                            <Label htmlFor="phrase">Frase Específica</Label>
-                            <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione uma frase" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {phrases.map((phrase) => (
-                                  <SelectItem key={phrase.id} value={phrase.id}>
-                                    {phrase.content.substring(0, 50)}...
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                        <div className="space-y-2">
+                          <Label htmlFor="interval">Intervalo entre posts</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="interval"
+                              type="number"
+                              min="1"
+                              value={intervalMinutes}
+                              onChange={(e) => setIntervalMinutes(e.target.value)}
+                              required
+                              className="h-11"
+                            />
+                            <div className="flex items-center px-3 border rounded-md bg-muted text-muted-foreground text-sm whitespace-nowrap">
+                              minutos
+                            </div>
                           </div>
-                        )}
-                      </>
-                    )}
+                        </div>
+                      </div>
 
-                    {images.length === 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        Você precisa ter pelo menos 1 imagem cadastrada. Vá para a aba Imagens.
-                      </p>
-                    )}
-                  </>
-                )}
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="delay" className="text-sm font-medium">Delay Inteligente</Label>
+                          <p className="text-xs text-muted-foreground">
+                            Adiciona variação aleatória no horário (±15 min)
+                          </p>
+                        </div>
+                        <Switch
+                          id="delay"
+                          checked={useIntelligentDelay}
+                          onCheckedChange={setUseIntelligentDelay}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
 
-                {postType === 'carousel' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Selecione 2 a 10 imagens</Label>
-                      <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto p-2 border rounded">
-                        {images.map((image) => {
-                          const isSelected = carouselImages.includes(image.id);
-                          const selectedIndex = carouselImages.indexOf(image.id);
+                {/* Tipo de Conteúdo */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</div>
+                    Tipo de Conteúdo
+                  </div>
+                  
+                  <Card className="border-muted">
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPostType('text')}
+                          className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                            postType === 'text'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-muted hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <span className="text-2xl">📝</span>
+                          <span className="text-sm font-medium">Texto</span>
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => setPostType('image')}
+                          className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                            postType === 'image'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-muted hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <span className="text-2xl">🖼️</span>
+                          <span className="text-sm font-medium">Imagem</span>
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => setPostType('carousel')}
+                          className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                            postType === 'carousel'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-muted hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <span className="text-2xl">🎠</span>
+                          <span className="text-sm font-medium">Carrossel</span>
+                        </button>
+                      </div>
 
-                          return (
-                            <div
-                              key={image.id}
-                              onClick={() => toggleCarouselImage(image.id)}
-                              className={`relative cursor-pointer rounded border-2 transition hover:scale-105 ${
-                                isSelected ? 'border-primary ring-2 ring-primary' : 'border-border'
-                              }`}
-                            >
-                              <img
-                                src={image.public_url}
-                                alt={image.alt_text || image.file_name}
-                                className="w-full h-24 object-cover rounded"
-                              />
-                              {isSelected && (
-                                <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                                  {selectedIndex + 1}
+                      {/* Configurações de Texto */}
+                      {postType === 'text' && (
+                        <div className="space-y-4 pt-4 border-t">
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                            <Label htmlFor="random" className="text-sm font-medium">Frase Aleatória</Label>
+                            <Switch
+                              id="random"
+                              checked={useRandomPhrase}
+                              onCheckedChange={setUseRandomPhrase}
+                            />
+                          </div>
+
+                          {!useRandomPhrase && (
+                            <div className="space-y-2">
+                              <Label htmlFor="phrase">Selecione uma frase</Label>
+                              <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Escolha a frase que será postada" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {phrases.map((phrase) => (
+                                    <SelectItem key={phrase.id} value={phrase.id}>
+                                      <div className="max-w-md truncate">{phrase.content}</div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Configurações de Imagem */}
+                      {postType === 'image' && (
+                        <div className="space-y-4 pt-4 border-t">
+                          {images.length === 0 ? (
+                            <div className="p-4 text-center text-sm text-muted-foreground bg-muted/50 rounded-lg">
+                              Você precisa cadastrar pelo menos 1 imagem na aba Imagens
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                                <Label htmlFor="randomImage" className="text-sm font-medium">Imagem Aleatória</Label>
+                                <Switch
+                                  id="randomImage"
+                                  checked={useRandomImage}
+                                  onCheckedChange={setUseRandomImage}
+                                />
+                              </div>
+
+                              {!useRandomImage && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="image">Selecione uma imagem</Label>
+                                  <Select value={selectedImage} onValueChange={setSelectedImage} required>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Escolha a imagem" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {images.map((image) => (
+                                        <SelectItem key={image.id} value={image.id}>
+                                          <div className="flex items-center gap-2">
+                                            <img src={image.public_url} className="h-8 w-8 object-cover rounded" alt="" />
+                                            <span className="truncate">{image.file_name}</span>
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                 </div>
                               )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {carouselImages.length} de 10 imagens selecionadas
-                        {carouselImages.length < 2 && " (mínimo 2)"}
-                      </p>
-                    </div>
 
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="useTextCarousel">Adicionar Texto</Label>
-                      <Switch
-                        id="useTextCarousel"
-                        checked={useText}
-                        onCheckedChange={setUseText}
-                      />
-                    </div>
+                              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                                <Label htmlFor="useText" className="text-sm font-medium">Adicionar Texto (opcional)</Label>
+                                <Switch
+                                  id="useText"
+                                  checked={useText}
+                                  onCheckedChange={setUseText}
+                                />
+                              </div>
 
-                    {useText && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="randomPhraseCarousel">Frase Aleatória</Label>
-                          <Switch
-                            id="randomPhraseCarousel"
-                            checked={useRandomPhrase}
-                            onCheckedChange={setUseRandomPhrase}
-                          />
+                              {useText && (
+                                <div className="space-y-4 pl-4 border-l-2 border-muted">
+                                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                                    <Label htmlFor="randomPhrase" className="text-sm font-medium">Frase Aleatória</Label>
+                                    <Switch
+                                      id="randomPhrase"
+                                      checked={useRandomPhrase}
+                                      onCheckedChange={setUseRandomPhrase}
+                                    />
+                                  </div>
+
+                                  {!useRandomPhrase && (
+                                    <div className="space-y-2">
+                                      <Label htmlFor="phrase">Selecione uma frase</Label>
+                                      <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Escolha a frase" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {phrases.map((phrase) => (
+                                            <SelectItem key={phrase.id} value={phrase.id}>
+                                              <div className="max-w-md truncate">{phrase.content}</div>
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
+                      )}
 
-                        {!useRandomPhrase && (
-                          <div className="space-y-2">
-                            <Label htmlFor="phraseCarousel">Frase Específica</Label>
-                            <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione uma frase" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {phrases.map((phrase) => (
-                                  <SelectItem key={phrase.id} value={phrase.id}>
-                                    {phrase.content.substring(0, 50)}...
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </>
-                    )}
+                      {/* Configurações de Carrossel */}
+                      {postType === 'carousel' && (
+                        <div className="space-y-4 pt-4 border-t">
+                          {images.length < 2 ? (
+                            <div className="p-4 text-center text-sm text-muted-foreground bg-muted/50 rounded-lg">
+                              Você precisa cadastrar pelo menos 2 imagens na aba Imagens
+                            </div>
+                          ) : (
+                            <>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label>Selecione as imagens</Label>
+                                  <span className="text-xs text-muted-foreground">
+                                    {carouselImages.length}/10 selecionadas
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto p-3 border rounded-lg bg-muted/30">
+                                  {images.map((image) => (
+                                    <button
+                                      type="button"
+                                      key={image.id}
+                                      onClick={() => toggleCarouselImage(image.id)}
+                                      className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all aspect-square ${
+                                        carouselImages.includes(image.id)
+                                          ? 'border-primary ring-2 ring-primary/20'
+                                          : 'border-transparent hover:border-muted-foreground/30'
+                                      }`}
+                                    >
+                                      <img
+                                        src={image.public_url}
+                                        alt={image.alt_text || image.file_name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                      {carouselImages.includes(image.id) && (
+                                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                          <div className="bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow-lg">
+                                            {carouselImages.indexOf(image.id) + 1}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                                {carouselImages.length > 0 && carouselImages.length < 2 && (
+                                  <p className="text-xs text-destructive">Selecione pelo menos 2 imagens</p>
+                                )}
+                              </div>
 
-                    {images.length === 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        Você precisa ter pelo menos 2 imagens cadastradas. Vá para a aba Imagens.
-                      </p>
-                    )}
-                  </>
-                )}
+                              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                                <Label htmlFor="useTextCarousel" className="text-sm font-medium">Adicionar Texto (opcional)</Label>
+                                <Switch
+                                  id="useTextCarousel"
+                                  checked={useText}
+                                  onCheckedChange={setUseText}
+                                />
+                              </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="delay">Delay Inteligente</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Adiciona 30s a 2min de delay aleatório
-                    </p>
-                  </div>
-                  <Switch
-                    id="delay"
-                    checked={useIntelligentDelay}
-                    onCheckedChange={setUseIntelligentDelay}
-                  />
+                              {useText && (
+                                <div className="space-y-4 pl-4 border-l-2 border-muted">
+                                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                                    <Label htmlFor="randomPhraseCarousel" className="text-sm font-medium">Frase Aleatória</Label>
+                                    <Switch
+                                      id="randomPhraseCarousel"
+                                      checked={useRandomPhrase}
+                                      onCheckedChange={setUseRandomPhrase}
+                                    />
+                                  </div>
+
+                                  {!useRandomPhrase && (
+                                    <div className="space-y-2">
+                                      <Label htmlFor="phraseCarousel">Selecione uma frase</Label>
+                                      <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Escolha a frase" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {phrases.map((phrase) => (
+                                            <SelectItem key={phrase.id} value={phrase.id}>
+                                              <div className="max-w-md truncate">{phrase.content}</div>
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
 
-                <Button type="submit" className="w-full">
-                  Criar Automação
-                </Button>
+                {/* Botões de Ação */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="min-w-32">
+                    Criar Automação
+                  </Button>
+                </div>
               </form>
             </DialogContent>
           </Dialog>
