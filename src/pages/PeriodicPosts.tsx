@@ -67,6 +67,7 @@ const PeriodicPosts = () => {
   const [selectedAccount, setSelectedAccount] = useState("");
   const [intervalMinutes, setIntervalMinutes] = useState("10");
   const [postType, setPostType] = useState<'text' | 'image' | 'carousel'>('text');
+  const [useText, setUseText] = useState(false);
   const [useRandomPhrase, setUseRandomPhrase] = useState(true);
   const [selectedPhrase, setSelectedPhrase] = useState("");
   const [useRandomImage, setUseRandomImage] = useState(false);
@@ -187,8 +188,8 @@ const PeriodicPosts = () => {
         account_id: selectedAccount,
         interval_minutes: parseInt(intervalMinutes),
         post_type: postType,
-        use_random_phrase: postType === 'text' ? useRandomPhrase : false,
-        specific_phrase_id: postType === 'text' && !useRandomPhrase ? selectedPhrase || null : null,
+        use_random_phrase: postType === 'text' ? useRandomPhrase : (useText ? useRandomPhrase : false),
+        specific_phrase_id: postType === 'text' && !useRandomPhrase ? selectedPhrase || null : (useText && !useRandomPhrase ? selectedPhrase || null : null),
         use_random_image: postType === 'image' ? useRandomImage : false,
         specific_image_id: postType === 'image' && !useRandomImage ? selectedImage || null : null,
         carousel_image_ids: postType === 'carousel' ? carouselImages : [],
@@ -266,6 +267,7 @@ const PeriodicPosts = () => {
     setSelectedAccount("");
     setIntervalMinutes("10");
     setPostType('text');
+    setUseText(false);
     setUseRandomPhrase(true);
     setSelectedPhrase("");
     setUseRandomImage(false);
@@ -427,6 +429,46 @@ const PeriodicPosts = () => {
                       </div>
                     )}
 
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="useText">Adicionar Texto</Label>
+                      <Switch
+                        id="useText"
+                        checked={useText}
+                        onCheckedChange={setUseText}
+                      />
+                    </div>
+
+                    {useText && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="randomPhrase">Frase Aleatória</Label>
+                          <Switch
+                            id="randomPhrase"
+                            checked={useRandomPhrase}
+                            onCheckedChange={setUseRandomPhrase}
+                          />
+                        </div>
+
+                        {!useRandomPhrase && (
+                          <div className="space-y-2">
+                            <Label htmlFor="phrase">Frase Específica</Label>
+                            <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione uma frase" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {phrases.map((phrase) => (
+                                  <SelectItem key={phrase.id} value={phrase.id}>
+                                    {phrase.content.substring(0, 50)}...
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </>
+                    )}
+
                     {images.length === 0 && (
                       <p className="text-sm text-muted-foreground">
                         Você precisa ter pelo menos 1 imagem cadastrada. Vá para a aba Imagens.
@@ -471,6 +513,46 @@ const PeriodicPosts = () => {
                         {carouselImages.length < 2 && " (mínimo 2)"}
                       </p>
                     </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="useTextCarousel">Adicionar Texto</Label>
+                      <Switch
+                        id="useTextCarousel"
+                        checked={useText}
+                        onCheckedChange={setUseText}
+                      />
+                    </div>
+
+                    {useText && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="randomPhraseCarousel">Frase Aleatória</Label>
+                          <Switch
+                            id="randomPhraseCarousel"
+                            checked={useRandomPhrase}
+                            onCheckedChange={setUseRandomPhrase}
+                          />
+                        </div>
+
+                        {!useRandomPhrase && (
+                          <div className="space-y-2">
+                            <Label htmlFor="phraseCarousel">Frase Específica</Label>
+                            <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione uma frase" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {phrases.map((phrase) => (
+                                  <SelectItem key={phrase.id} value={phrase.id}>
+                                    {phrase.content.substring(0, 50)}...
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </>
+                    )}
 
                     {images.length === 0 && (
                       <p className="text-sm text-muted-foreground">
