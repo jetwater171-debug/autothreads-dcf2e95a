@@ -159,13 +159,13 @@ Deno.serve(async (req) => {
 
         const contentHash = await calculateContentHash(contentForHash);
 
-        // 5. Verificar duplicação nos últimos 60 minutos
+        // 5. Verificar duplicação nos últimos 60 minutos (por conta)
         const sixtyMinutesAgo = new Date(now.getTime() - 60 * 60 * 1000);
         const { data: duplicates } = await supabase
           .from("post_history")
           .select("id")
           .eq("content_hash", contentHash)
-          .eq("user_id", post.user_id)
+          .eq("account_id", post.account_id)
           .gte("posted_at", sixtyMinutesAgo.toISOString())
           .limit(1);
 
