@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun, TrendingUp, ImageIcon, Megaphone } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun, TrendingUp, ImageIcon, Megaphone, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useEffect, useState } from "react";
@@ -74,6 +74,10 @@ const Layout = ({
     path: "/analytics",
     label: "Analytics",
     icon: TrendingUp
+  }, {
+    path: "/post-history",
+    label: "Histórico",
+    icon: History
   }];
   return <div className="min-h-screen flex bg-background">
       {/* Sidebar */}

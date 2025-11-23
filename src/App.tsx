@@ -14,6 +14,7 @@ import Images from "./pages/Images";
 import Analytics from "./pages/Analytics";
 import Campaigns from "./pages/Campaigns";
 import CampaignDetails from "./pages/CampaignDetails";
+import PostHistory from "./pages/PostHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/campaigns/:id" element={<CampaignDetails />} />
           <Route path="/manual-post" element={<ManualPost />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/post-history" element={<PostHistory />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

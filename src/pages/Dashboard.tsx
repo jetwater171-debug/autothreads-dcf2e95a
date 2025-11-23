@@ -3,16 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Calendar, Users, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MessageSquare, Calendar, Users, Sparkles, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-interface PostHistory {
-  id: string;
-  content: string;
-  posted_at: string;
-  account_username: string | null;
-}
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -22,7 +16,6 @@ const Dashboard = () => {
     periodicPosts: 0,
     postsToday: 0
   });
-  const [postHistory, setPostHistory] = useState<PostHistory[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,7 +26,6 @@ const Dashboard = () => {
         return;
       }
       await loadStats();
-      await loadPostHistory();
     };
 
     checkAuth();
@@ -61,34 +53,6 @@ const Dashboard = () => {
       console.error("Error loading stats:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadPostHistory = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("post_history")
-        .select(`
-          id,
-          content,
-          posted_at,
-          threads_accounts!post_history_account_id_fkey (username)
-        `)
-        .order("posted_at", { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-
-      const formattedHistory = data?.map((post: any) => ({
-        id: post.id,
-        content: post.content,
-        posted_at: post.posted_at,
-        account_username: post.threads_accounts?.username || null
-      })) || [];
-
-      setPostHistory(formattedHistory);
-    } catch (error) {
-      console.error("Error loading post history:", error);
     }
   };
 
@@ -179,44 +143,39 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              Histórico de Posts
+        <Card className="border-2 overflow-hidden relative group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-x-32 -translate-y-32 group-hover:bg-primary/10 transition-all duration-500" />
+          <CardHeader className="relative">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                Histórico de Posts
+              </div>
             </CardTitle>
             <CardDescription>
-              Últimos posts realizados
+              Acompanhe todos os posts publicados pela automação
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {postHistory.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageSquare className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Nenhum post realizado ainda</p>
+          <CardContent className="relative">
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                <MessageSquare className="h-8 w-8 text-primary" />
               </div>
-            ) : (
-              <div className="space-y-3">
-                {postHistory.map((post) => (
-                  <div
-                    key={post.id}
-                    className="border-l-2 border-primary/50 pl-4 py-3 hover:border-primary hover:bg-primary/5 transition-all duration-300 rounded-r-lg"
-                  >
-                    <p className="font-medium">{post.content}</p>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5" />
-                        {post.account_username || "Conta desconhecida"}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {format(new Date(post.posted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+              <p className="text-lg font-medium mb-2">
+                {stats.postsToday > 0 ? `${stats.postsToday} posts hoje` : "Nenhum post hoje"}
+              </p>
+              <p className="text-sm text-muted-foreground mb-6">
+                Visualize o histórico completo de publicações
+              </p>
+              <Button 
+                size="lg"
+                onClick={() => navigate("/post-history")}
+                className="group/btn shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
+              >
+                Ver Histórico Completo
+                <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
