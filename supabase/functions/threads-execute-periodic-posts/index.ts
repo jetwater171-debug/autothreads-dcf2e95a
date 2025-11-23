@@ -65,18 +65,18 @@ Deno.serve(async (req) => {
         // 3. Obter imagem(ns) (se necessário)
         const imageUrls = await getImagesForPost(supabase, post);
 
-        // 4. Delay inteligente (5-20 segundos para não atrasar muito)
-        if (post.use_intelligent_delay) {
-          const delaySec = Math.floor(Math.random() * 16) + 5; // 5-20s
-          console.log(`⌛ Delay inteligente: ${delaySec}s`);
-          await sleep(delaySec * 1000);
-        }
-
-        // 5. Atualizar last_posted_at ANTES de criar o post (evita duplicação)
+        // 4. Atualizar last_posted_at ANTES de criar o post (evita duplicação)
         await supabase
           .from("periodic_posts")
           .update({ last_posted_at: now.toISOString() })
           .eq("id", post.id);
+
+        // 5. Delay inteligente (diferente para cada post)
+        if (post.use_intelligent_delay) {
+          const delaySec = Math.floor(Math.random() * 16) + 5; // 5-20s aleatório por post
+          console.log(`⌛ Delay inteligente de ${delaySec}s para este post`);
+          await sleep(delaySec * 1000);
+        }
 
         // 6. Criar post chamando sua function oficial
         const createPostUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/threads-create-post`;
