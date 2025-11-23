@@ -20,13 +20,28 @@ interface PeriodicPost {
   use_intelligent_delay: boolean;
   is_active: boolean;
   last_posted_at: string | null;
+  post_type: string;
+  use_random_image: boolean;
+  specific_image_id: string | null;
+  carousel_image_ids: string[] | null;
   threads_accounts: {
     username: string | null;
     account_id: string;
+    profile_picture_url: string | null;
   };
   phrases: {
     content: string;
   } | null;
+  images?: {
+    public_url: string;
+  } | null;
+}
+
+interface Image {
+  id: string;
+  file_name: string;
+  public_url: string;
+  alt_text: string | null;
 }
 
 interface ThreadsAccount {
@@ -45,13 +60,18 @@ const PeriodicPosts = () => {
   const [posts, setPosts] = useState<PeriodicPost[]>([]);
   const [accounts, setAccounts] = useState<ThreadsAccount[]>([]);
   const [phrases, setPhrases] = useState<Phrase[]>([]);
+  const [images, setImages] = useState<Image[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   
   const [selectedAccount, setSelectedAccount] = useState("");
   const [intervalMinutes, setIntervalMinutes] = useState("10");
+  const [postType, setPostType] = useState<'text' | 'image' | 'carousel'>('text');
   const [useRandomPhrase, setUseRandomPhrase] = useState(true);
   const [selectedPhrase, setSelectedPhrase] = useState("");
+  const [useRandomImage, setUseRandomImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [carouselImages, setCarouselImages] = useState<string[]>([]);
   const [useIntelligentDelay, setUseIntelligentDelay] = useState(false);
   
   const navigate = useNavigate();
@@ -64,7 +84,7 @@ const PeriodicPosts = () => {
         navigate("/auth");
         return;
       }
-      await Promise.all([loadPosts(), loadAccounts(), loadPhrases()]);
+      await Promise.all([loadPosts(), loadAccounts(), loadPhrases(), loadImages()]);
     };
 
     checkAuth();
@@ -76,7 +96,7 @@ const PeriodicPosts = () => {
         .from("periodic_posts")
         .select(`
           *,
-          threads_accounts (username, account_id),
+          threads_accounts (username, account_id, profile_picture_url),
           phrases (content)
         `)
         .order("created_at", { ascending: false });
@@ -117,8 +137,46 @@ const PeriodicPosts = () => {
     }
   };
 
+  const loadImages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("images")
+        .select("id, file_name, public_url, alt_text");
+
+      if (error) throw error;
+      setImages(data || []);
+    } catch (error) {
+      console.error("Error loading images:", error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validações
+    if (postType === 'text' && !selectedPhrase && !useRandomPhrase) {
+      toast({
+        variant: "destructive",
+        title: "Selecione uma frase",
+      });
+      return;
+    }
+
+    if (postType === 'image' && !selectedImage && !useRandomImage) {
+      toast({
+        variant: "destructive",
+        title: "Selecione uma imagem",
+      });
+      return;
+    }
+
+    if (postType === 'carousel' && (carouselImages.length < 2 || carouselImages.length > 10)) {
+      toast({
+        variant: "destructive",
+        title: "Selecione entre 2 e 10 imagens",
+      });
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -128,8 +186,12 @@ const PeriodicPosts = () => {
         user_id: user.id,
         account_id: selectedAccount,
         interval_minutes: parseInt(intervalMinutes),
-        use_random_phrase: useRandomPhrase,
-        specific_phrase_id: useRandomPhrase ? null : selectedPhrase || null,
+        post_type: postType,
+        use_random_phrase: postType === 'text' ? useRandomPhrase : false,
+        specific_phrase_id: postType === 'text' && !useRandomPhrase ? selectedPhrase || null : null,
+        use_random_image: postType === 'image' ? useRandomImage : false,
+        specific_image_id: postType === 'image' && !useRandomImage ? selectedImage || null : null,
+        carousel_image_ids: postType === 'carousel' ? carouselImages : [],
         use_intelligent_delay: useIntelligentDelay,
       });
 
@@ -203,9 +265,30 @@ const PeriodicPosts = () => {
   const resetForm = () => {
     setSelectedAccount("");
     setIntervalMinutes("10");
+    setPostType('text');
     setUseRandomPhrase(true);
     setSelectedPhrase("");
+    setUseRandomImage(false);
+    setSelectedImage("");
+    setCarouselImages([]);
     setUseIntelligentDelay(false);
+  };
+
+  const toggleCarouselImage = (imageId: string) => {
+    setCarouselImages(prev => {
+      if (prev.includes(imageId)) {
+        return prev.filter(id => id !== imageId);
+      } else {
+        if (prev.length >= 10) {
+          toast({
+            variant: "destructive",
+            title: "Máximo de 10 imagens",
+          });
+          return prev;
+        }
+        return [...prev, imageId];
+      }
+    });
   };
 
   return (
@@ -220,12 +303,12 @@ const PeriodicPosts = () => {
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button disabled={accounts.length === 0 || phrases.length === 0}>
+              <Button disabled={accounts.length === 0}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Automação
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Configurar Post Periódico</DialogTitle>
                 <DialogDescription>
@@ -267,31 +350,134 @@ const PeriodicPosts = () => {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="random">Frase Aleatória</Label>
-                  <Switch
-                    id="random"
-                    checked={useRandomPhrase}
-                    onCheckedChange={setUseRandomPhrase}
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="postType">Tipo de Post</Label>
+                  <Select value={postType} onValueChange={(value: any) => setPostType(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">📝 Apenas Texto</SelectItem>
+                      <SelectItem value="image">🖼️ Imagem (+ texto opcional)</SelectItem>
+                      <SelectItem value="carousel">🖼️🖼️ Carrossel (2-10 imagens + texto opcional)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {!useRandomPhrase && (
-                  <div className="space-y-2">
-                    <Label htmlFor="phrase">Frase Específica</Label>
-                    <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma frase" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {phrases.map((phrase) => (
-                          <SelectItem key={phrase.id} value={phrase.id}>
-                            {phrase.content.substring(0, 50)}...
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {postType === 'text' && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="random">Frase Aleatória</Label>
+                      <Switch
+                        id="random"
+                        checked={useRandomPhrase}
+                        onCheckedChange={setUseRandomPhrase}
+                      />
+                    </div>
+
+                    {!useRandomPhrase && (
+                      <div className="space-y-2">
+                        <Label htmlFor="phrase">Frase Específica</Label>
+                        <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma frase" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {phrases.map((phrase) => (
+                              <SelectItem key={phrase.id} value={phrase.id}>
+                                {phrase.content.substring(0, 50)}...
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {postType === 'image' && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="randomImage">Imagem Aleatória</Label>
+                      <Switch
+                        id="randomImage"
+                        checked={useRandomImage}
+                        onCheckedChange={setUseRandomImage}
+                      />
+                    </div>
+
+                    {!useRandomImage && (
+                      <div className="space-y-2">
+                        <Label htmlFor="image">Selecionar Imagem</Label>
+                        <Select value={selectedImage} onValueChange={setSelectedImage} required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma imagem" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {images.map((image) => (
+                              <SelectItem key={image.id} value={image.id}>
+                                <div className="flex items-center gap-2">
+                                  <img src={image.public_url} className="h-8 w-8 object-cover rounded" alt="" />
+                                  {image.file_name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {images.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Você precisa ter pelo menos 1 imagem cadastrada. Vá para a aba Imagens.
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {postType === 'carousel' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Selecione 2 a 10 imagens</Label>
+                      <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto p-2 border rounded">
+                        {images.map((image) => {
+                          const isSelected = carouselImages.includes(image.id);
+                          const selectedIndex = carouselImages.indexOf(image.id);
+
+                          return (
+                            <div
+                              key={image.id}
+                              onClick={() => toggleCarouselImage(image.id)}
+                              className={`relative cursor-pointer rounded border-2 transition hover:scale-105 ${
+                                isSelected ? 'border-primary ring-2 ring-primary' : 'border-border'
+                              }`}
+                            >
+                              <img
+                                src={image.public_url}
+                                alt={image.alt_text || image.file_name}
+                                className="w-full h-24 object-cover rounded"
+                              />
+                              {isSelected && (
+                                <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                                  {selectedIndex + 1}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {carouselImages.length} de 10 imagens selecionadas
+                        {carouselImages.length < 2 && " (mínimo 2)"}
+                      </p>
+                    </div>
+
+                    {images.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Você precisa ter pelo menos 2 imagens cadastradas. Vá para a aba Imagens.
+                      </p>
+                    )}
+                  </>
                 )}
 
                 <div className="flex items-center justify-between">
