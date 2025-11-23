@@ -13,6 +13,8 @@ import { Upload, Trash2, Edit, Loader2, ImageIcon, FolderInput as FolderInputIco
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { FolderManager } from "@/components/FolderManager";
+import { DndContext, DragOverlay, DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core";
+import { DraggableImage } from "@/components/DraggableImage";
 
 interface Image {
   id: string;
@@ -41,6 +43,8 @@ const Images = () => {
   const [altText, setAltText] = useState("");
   const [movingImageId, setMovingImageId] = useState<string | null>(null);
   const [targetFolderId, setTargetFolderId] = useState<string>("none");
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -281,9 +285,44 @@ const Images = () => {
     ? images 
     : images.filter(img => img.folder_id === selectedFolder);
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverId(event.over?.id as string || null);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    setActiveId(null);
+    setOverId(null);
+
+    if (!over || active.id === over.id) return;
+
+    const imageId = active.id as string;
+    const targetFolderId = over.id === 'root' ? null : (over.id as string);
+
+    await handleMoveToFolder(imageId, targetFolderId);
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    setOverId(null);
+  };
+
+  const activeImage = activeId ? images.find(img => img.id === activeId) : null;
+
   return (
     <Layout>
-      <div className="space-y-8">
+      <DndContext
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Imagens</h1>
@@ -328,6 +367,7 @@ const Images = () => {
             loadFolders();
             loadImages();
           }}
+          overId={overId}
         />
 
         {loading ? (
@@ -377,146 +417,82 @@ const Images = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredImages.map((image) => (
-              <Card key={image.id} className="overflow-hidden group">
-                <div className="relative aspect-square">
-                  <img
-                    src={image.public_url}
-                    alt={image.alt_text || image.file_name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Dialog open={movingImageId === image.id} onOpenChange={(open) => {
-                      if (!open) {
-                        setMovingImageId(null);
-                        setTargetFolderId("none");
-                      }
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          onClick={() => setMovingImageId(image.id)}
-                        >
-                          <FolderInputIcon className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Mover para Pasta</DialogTitle>
-                          <DialogDescription>
-                            Selecione a pasta de destino
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <Select value={targetFolderId} onValueChange={setTargetFolderId}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma pasta" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Sem pasta (raiz)</SelectItem>
-                              {folders.map((folder) => (
-                                <SelectItem key={folder.id} value={folder.id}>
-                                  {folder.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button 
-                            onClick={() => handleMoveToFolder(image.id, targetFolderId === "none" ? null : targetFolderId)}
-                            className="w-full"
-                          >
-                            Mover
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    <Dialog open={editingImage?.id === image.id} onOpenChange={(open) => {
-                      if (!open) {
-                        setEditingImage(null);
-                        setAltText("");
-                      }
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          onClick={() => {
-                            setEditingImage(image);
-                            setAltText(image.alt_text || "");
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Editar Alt Text</DialogTitle>
-                          <DialogDescription>
-                            Adicione uma descrição para acessibilidade
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <img
-                              src={image.public_url}
-                              alt={image.file_name}
-                              className="w-full h-48 object-cover rounded"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="alt-text">Texto Alternativo</Label>
-                            <Textarea
-                              id="alt-text"
-                              value={altText}
-                              onChange={(e) => setAltText(e.target.value)}
-                              placeholder="Descreva a imagem..."
-                              rows={3}
-                            />
-                          </div>
-                          <Button onClick={handleUpdateAltText} className="w-full">
-                            Salvar
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="icon">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja excluir esta imagem? Esta ação não pode ser desfeita.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(image)}>
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-                <CardContent className="p-3">
-                  <p className="text-sm font-medium truncate">{image.file_name}</p>
-                  {image.alt_text && (
-                    <p className="text-xs text-muted-foreground truncate mt-1">
-                      {image.alt_text}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+              <DraggableImage
+                key={image.id}
+                id={image.id}
+                publicUrl={image.public_url}
+                fileName={image.file_name}
+                altText={image.alt_text}
+                isDragging={activeId === image.id}
+                onEdit={() => {
+                  setEditingImage(image);
+                  setAltText(image.alt_text || "");
+                }}
+                onDelete={() => handleDelete(image)}
+              />
             ))}
           </div>
         )}
+
+        {/* Dialogs for Edit */}
+        <Dialog open={!!editingImage} onOpenChange={(open) => {
+          if (!open) {
+            setEditingImage(null);
+            setAltText("");
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Alt Text</DialogTitle>
+              <DialogDescription>
+                Adicione uma descrição para acessibilidade
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {editingImage && (
+                <div>
+                  <img
+                    src={editingImage.public_url}
+                    alt={editingImage.file_name}
+                    className="w-full h-48 object-cover rounded"
+                  />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="alt-text">Texto Alternativo</Label>
+                <Textarea
+                  id="alt-text"
+                  value={altText}
+                  onChange={(e) => setAltText(e.target.value)}
+                  placeholder="Descreva a imagem..."
+                  rows={3}
+                />
+              </div>
+              <Button onClick={handleUpdateAltText} className="w-full">
+                Salvar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <DragOverlay>
+          {activeImage && (
+            <Card className="overflow-hidden opacity-90 shadow-2xl rotate-3">
+              <div className="relative aspect-square">
+                <img
+                  src={activeImage.public_url}
+                  alt={activeImage.alt_text || activeImage.file_name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="p-3">
+                <p className="text-sm font-medium truncate">{activeImage.file_name}</p>
+              </CardContent>
+            </Card>
+          )}
+        </DragOverlay>
       </div>
+    </DndContext>
     </Layout>
   );
 };
