@@ -13,175 +13,230 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { accountId, text, imageUrls, postType, userId } = await req.json();
+    const { accountId, text, imageUrls, postType } = await req.json();
 
-    if (!accountId) {
-      throw new Error('accountId é obrigatório');
-    }
+    if (!accountId) throw new Error('accountId é obrigatório');
 
-    // Validações baseadas no tipo de post
-    if (postType === 'text' && !text) {
+    if (postType === 'text' && !text)
       throw new Error('Texto é obrigatório para posts de texto');
-    }
 
-    if (postType === 'image' && (!imageUrls || imageUrls.length === 0)) {
+    if (postType === 'image' && (!imageUrls || imageUrls.length === 0))
       throw new Error('Imagem é obrigatória para posts de imagem');
-    }
 
-    if (postType === 'carousel' && (!imageUrls || imageUrls.length < 2 || imageUrls.length > 10)) {
+    if (postType === 'carousel' && (!imageUrls || imageUrls.length < 2 || imageUrls.length > 10))
       throw new Error('Carrossel requer entre 2 e 10 imagens');
-    }
 
-    // Obter usuário autenticado
+    // Autenticação do Supabase
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Token de autenticação não fornecido');
-    }
+    if (!authHeader) throw new Error('Token de autenticação não fornecido');
 
-    // Determinar se está usando SERVICE_ROLE_KEY ou token de usuário
-    const isServiceRole = authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || 'SERVICE_ROLE');
-    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      isServiceRole ? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '' : Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
-        global: {
-          headers: { Authorization: authHeader },
-        },
+        global: { headers: { Authorization: authHeader } }
       }
     );
 
-    let userIdToUse = userId;
-    
-    // Se não for chamada de service role, obter usuário autenticado
-    if (!isServiceRole) {
-      const {
-        data: { user },
-      } = await supabaseClient.auth.getUser();
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser();
 
-      if (!user) {
-        throw new Error('Usuário não autenticado');
-      }
-      userIdToUse = user.id;
-    }
+    if (!user) throw new Error('Usuário não autenticado');
 
-    if (!userIdToUse) {
-      throw new Error('userId é obrigatório para chamadas de service role');
-    }
-
-    // Buscar conta do Threads
+    // Buscar conta vinculada
     const { data: account, error: accountError } = await supabaseClient
       .from('threads_accounts')
       .select('account_id, access_token')
       .eq('id', accountId)
-      .eq('user_id', userIdToUse)
+      .eq('user_id', user.id)
       .single();
 
-    if (accountError || !account) {
-      throw new Error('Conta não encontrada');
-    }
+    if (accountError || !account) throw new Error('Conta não encontrada');
 
-    console.log(`Criando post tipo ${postType || 'text'} no Threads...`);
+    console.log(`Criando post tipo ${postType}...`);
 
-    let createUrl = `https://graph.threads.net/v1.0/${account.account_id}/threads?access_token=${account.access_token}&domain=THREADS`;
+    //
+    // ================================
+    // CRIAÇÃO DO CONTAINER
+    // ================================
+    //
+
     let creationId: string;
 
-    // Construir request baseado no tipo de post
+    //
+    // POST DE CARROSSEL
+    //
     if (postType === 'carousel') {
-      // Criar containers individuais para cada imagem
       const childrenIds: string[] = [];
 
       for (const imageUrl of imageUrls) {
+        const childReq = {
+          access_token: account.access_token,
+          media_type: "IMAGE",
+          upload_type: "external",
+          image_url: imageUrl,
+          is_carousel_item: true
+        };
+
         const childResponse = await fetch(
-          `https://graph.threads.net/v1.0/${account.account_id}/threads?` +
-          `access_token=${account.access_token}` +
-          `&domain=THREADS` +
-          `&media_type=IMAGE` +
-          `&image_url=${encodeURIComponent(imageUrl)}` +
-          `&is_carousel_item=true`,
-          { method: 'POST' }
+          `https://graph.threads.net/v1.0/${account.account_id}/threads`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(childReq),
+          }
         );
 
         if (!childResponse.ok) {
-          const errorText = await childResponse.text();
-          console.error('Erro ao criar item do carrossel:', errorText);
-          throw new Error(`Erro ao criar item do carrossel: ${errorText}`);
+          const err = await childResponse.text();
+          console.error("Erro ao criar item do carrossel:", err);
+          throw new Error("Erro ao criar item do carrossel");
         }
 
         const childData = await childResponse.json();
         childrenIds.push(childData.id);
       }
 
-      // Criar container do carrossel com os children
-      createUrl += `&media_type=CAROUSEL&children=${childrenIds.join(',')}`;
-      if (text) {
-        createUrl += `&text=${encodeURIComponent(text)}`;
+      // Criar o container final com todos os children
+      const carouselBody = {
+        access_token: account.access_token,
+        media_type: "CAROUSEL",
+        children: childrenIds,
+        text: text ?? ""
+      };
+
+      const createResponse = await fetch(
+        `https://graph.threads.net/v1.0/${account.account_id}/threads`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(carouselBody),
+        }
+      );
+
+      if (!createResponse.ok) {
+        const err = await createResponse.text();
+        console.error("Erro ao criar post carousel:", err);
+        throw new Error("Erro ao criar carrossel");
       }
-    } else if (postType === 'image') {
-      // Post com 1 imagem + texto opcional
-      createUrl += `&media_type=IMAGE&image_url=${encodeURIComponent(imageUrls[0])}`;
-      if (text) {
-        createUrl += `&text=${encodeURIComponent(text)}`;
-      }
-    } else {
-      // Post apenas com texto (default)
-      createUrl += `&media_type=TEXT&text=${encodeURIComponent(text)}`;
+
+      const createData = await createResponse.json();
+      creationId = createData.id;
     }
 
-    // Criar container
-    const createResponse = await fetch(createUrl, { method: 'POST' });
+    //
+    // POST DE IMAGEM
+    //
+    else if (postType === "image") {
+      const body = {
+        access_token: account.access_token,
+        media_type: "IMAGE",
+        upload_type: "external",
+        image_url: imageUrls[0],
+        text: text ?? ""
+      };
 
-    if (!createResponse.ok) {
-      const errorText = await createResponse.text();
-      console.error('Erro ao criar post:', errorText);
-      throw new Error(`Erro ao criar post: ${errorText}`);
+      const createResponse = await fetch(
+        `https://graph.threads.net/v1.0/${account.account_id}/threads`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (!createResponse.ok) {
+        const err = await createResponse.text();
+        console.error("Erro ao criar post imagem:", err);
+        throw new Error("Erro ao criar post de imagem");
+      }
+
+      const createData = await createResponse.json();
+      creationId = createData.id;
     }
 
-    const createData = await createResponse.json();
-    creationId = createData.id;
+    //
+    // POST APENAS TEXTO
+    //
+    else {
+      const body = {
+        access_token: account.access_token,
+        media_type: "TEXT",
+        text: text
+      };
 
-    console.log('Post criado com ID:', creationId);
-    console.log('Aguardando 3 segundos para processar container...');
+      const createResponse = await fetch(
+        `https://graph.threads.net/v1.0/${account.account_id}/threads`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
 
-    // Delay de 3 segundos para a API processar o container
+      if (!createResponse.ok) {
+        const err = await createResponse.text();
+        console.error("Erro ao criar post texto:", err);
+        throw new Error("Erro ao criar post de texto");
+      }
+
+      const createData = await createResponse.json();
+      creationId = createData.id;
+    }
+
+    console.log("Container criado:", creationId);
+    console.log("Aguardando processamento...");
+
     await sleep(3000);
 
-    console.log('Publicando post...');
+    //
+    // ================================
+    // PUBLICAR POST
+    // ================================
+    //
 
-    // Publicar o post
     const publishResponse = await fetch(
-      `https://graph.threads.net/v1.0/${account.account_id}/threads_publish?` +
-      `access_token=${account.access_token}` +
-      `&creation_id=${creationId}`,
-      { method: 'POST' }
+      `https://graph.threads.net/v1.0/${account.account_id}/threads_publish`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          access_token: account.access_token,
+          creation_id: creationId
+        }),
+      }
     );
 
     if (!publishResponse.ok) {
-      const errorText = await publishResponse.text();
-      console.error('Erro ao publicar post:', errorText);
-      throw new Error(`Erro ao publicar post: ${errorText}`);
+      const err = await publishResponse.text();
+      console.error("Erro ao publicar post:", err);
+      throw new Error("Erro ao publicar post");
     }
 
     const publishData = await publishResponse.json();
-    console.log('Post publicado com sucesso:', publishData.id);
 
     return new Response(
       JSON.stringify({
         success: true,
-        postId: publishData.id,
         creationId,
+        postId: publishData.id
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
+
   } catch (error) {
-    console.error('Erro ao criar post:', error);
+    console.error("Erro geral:", error);
+
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({
+        error: (error as Error).message || "Erro ao criar post"
+      }),
       {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }
