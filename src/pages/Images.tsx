@@ -7,10 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Trash2, Edit, Loader2, ImageIcon } from "lucide-react";
+import { Upload, Trash2, Edit, Loader2, ImageIcon, FolderInput } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { FolderManager } from "@/components/FolderManager";
 
 interface Image {
   id: string;
@@ -18,15 +20,27 @@ interface Image {
   file_path: string;
   public_url: string;
   alt_text: string | null;
+  folder_id: string | null;
   created_at: string;
+}
+
+interface Folder {
+  id: string;
+  name: string;
+  type: string;
+  item_count?: number;
 }
 
 const Images = () => {
   const [images, setImages] = useState<Image[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [editingImage, setEditingImage] = useState<Image | null>(null);
   const [altText, setAltText] = useState("");
+  const [movingImageId, setMovingImageId] = useState<string | null>(null);
+  const [targetFolderId, setTargetFolderId] = useState<string>("none");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -37,7 +51,7 @@ const Images = () => {
         navigate("/auth");
         return;
       }
-      await loadImages();
+      await Promise.all([loadImages(), loadFolders()]);
     };
 
     checkAuth();
@@ -47,7 +61,7 @@ const Images = () => {
     try {
       const { data, error } = await supabase
         .from("images")
-        .select("id, file_name, file_path, public_url, alt_text, created_at")
+        .select("id, file_name, file_path, public_url, alt_text, folder_id, created_at")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -61,6 +75,37 @@ const Images = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFolders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("content_folders")
+        .select("*")
+        .eq("type", "image")
+        .order("name");
+
+      if (error) throw error;
+
+      // Count items in each folder
+      const foldersWithCounts = await Promise.all(
+        (data || []).map(async (folder) => {
+          const { count } = await supabase
+            .from("images")
+            .select("*", { count: "exact", head: true })
+            .eq("folder_id", folder.id);
+
+          return {
+            ...folder,
+            item_count: count || 0,
+          };
+        })
+      );
+
+      setFolders(foldersWithCounts);
+    } catch (error) {
+      console.error("Error loading folders:", error);
     }
   };
 

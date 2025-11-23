@@ -103,12 +103,40 @@ export type Database = {
         }
         Relationships: []
       }
+      content_folders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       images: {
         Row: {
           alt_text: string | null
           created_at: string | null
           file_name: string
           file_path: string
+          folder_id: string | null
           id: string
           public_url: string
           updated_at: string | null
@@ -119,6 +147,7 @@ export type Database = {
           created_at?: string | null
           file_name: string
           file_path: string
+          folder_id?: string | null
           id?: string
           public_url: string
           updated_at?: string | null
@@ -129,12 +158,21 @@ export type Database = {
           created_at?: string | null
           file_name?: string
           file_path?: string
+          folder_id?: string | null
           id?: string
           public_url?: string
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "images_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "content_folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       periodic_posts: {
         Row: {
@@ -229,6 +267,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          folder_id: string | null
           id: string
           updated_at: string | null
           user_id: string
@@ -236,6 +275,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string | null
+          folder_id?: string | null
           id?: string
           updated_at?: string | null
           user_id: string
@@ -243,11 +283,20 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
+          folder_id?: string | null
           id?: string
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "phrases_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "content_folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_history: {
         Row: {
