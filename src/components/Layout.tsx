@@ -92,15 +92,15 @@ const Layout = ({
             const isActive = location.pathname === item.path;
             return <Link key={item.path} to={item.path} className="block">
                   <Button 
-                    variant="ghost" 
+                     variant="ghost" 
                     className={cn(
-                      "w-full justify-start relative overflow-hidden transition-all duration-200 rounded-lg h-11",
-                      "hover:bg-primary/8 hover:shadow-sm group",
-                      isActive && "bg-primary/12 text-primary font-medium shadow-sm border border-primary/10"
+                      "w-full justify-start relative overflow-hidden transition-all duration-200 rounded-lg h-11 font-medium",
+                      "hover:bg-primary/8 hover:shadow-sm group text-[14px]",
+                      isActive && "bg-primary/12 text-primary shadow-sm border border-primary/20"
                     )}
                   >
-                    <Icon className={cn("mr-3 h-[18px] w-[18px] transition-transform duration-200 group-hover:scale-105", isActive && "text-primary")} />
-                    <span className="relative z-10 text-[13px]">{item.label}</span>
+                    <Icon className={cn("mr-3 h-5 w-5 transition-transform duration-200 group-hover:scale-105", isActive && "text-primary")} />
+                    <span className="relative z-10">{item.label}</span>
                     {isActive && <div className="absolute inset-0 bg-gradient-to-r from-primary/8 to-transparent" />}
                   </Button>
                 </Link>;
@@ -111,19 +111,19 @@ const Layout = ({
         <div className="absolute bottom-8 left-8 right-8 z-10 space-y-2">
           <Button 
             variant="ghost" 
-            className="w-full justify-start hover:bg-accent/50 transition-all duration-200 rounded-lg h-11" 
+            className="w-full justify-start hover:bg-accent/50 transition-all duration-200 rounded-lg h-11 font-medium text-[14px]" 
             onClick={toggleTheme}
           >
-            {theme === "dark" ? <Sun className="mr-3 h-[18px] w-[18px]" /> : <Moon className="mr-3 h-[18px] w-[18px]" />}
-            <span className="text-[13px]">{theme === "dark" ? "Modo Claro" : "Modo Escuro"}</span>
+            {theme === "dark" ? <Sun className="mr-3 h-5 w-5" /> : <Moon className="mr-3 h-5 w-5" />}
+            <span>{theme === "dark" ? "Modo Claro" : "Modo Escuro"}</span>
           </Button>
           <Button 
             variant="ghost" 
-            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-200 rounded-lg h-11" 
+            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-200 rounded-lg h-11 font-medium text-[14px]" 
             onClick={handleLogout}
           >
-            <LogOut className="mr-3 h-[18px] w-[18px]" />
-            <span className="text-[13px]">Sair</span>
+            <LogOut className="mr-3 h-5 w-5" />
+            <span>Sair</span>
           </Button>
         </div>
       </aside>
