@@ -70,6 +70,9 @@ interface WizardProps {
   imageFolders: Folder[];
   onSubmit: (data: WizardData) => Promise<void>;
   onCancel: () => void;
+  initialData?: Partial<WizardData>;
+  initialStep?: number;
+  onNavigateToAddContent?: (type: 'phrases' | 'images' | 'campaigns', currentData: WizardData, currentStep: number) => void;
 }
 
 export interface WizardData {
@@ -124,30 +127,33 @@ export function PeriodicPostWizard({
   imageFolders,
   onSubmit,
   onCancel,
+  initialData,
+  initialStep = 1,
+  onNavigateToAddContent,
 }: WizardProps) {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Form state
-  const [title, setTitle] = useState("");
-  const [selectedAccount, setSelectedAccount] = useState("");
-  const [selectedCampaign, setSelectedCampaign] = useState("none");
-  const [intervalMinutes, setIntervalMinutes] = useState("10");
-  const [useIntelligentDelay, setUseIntelligentDelay] = useState(false);
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [selectedAccount, setSelectedAccount] = useState(initialData?.selectedAccount || "");
+  const [selectedCampaign, setSelectedCampaign] = useState(initialData?.selectedCampaign || "none");
+  const [intervalMinutes, setIntervalMinutes] = useState(initialData?.intervalMinutes || "10");
+  const [useIntelligentDelay, setUseIntelligentDelay] = useState(initialData?.useIntelligentDelay || false);
   
-  const [postType, setPostType] = useState<'text' | 'image' | 'carousel'>('text');
+  const [postType, setPostType] = useState<'text' | 'image' | 'carousel'>(initialData?.postType || 'text');
   
-  const [useText, setUseText] = useState(true);
-  const [useRandomPhrase, setUseRandomPhrase] = useState(true);
-  const [selectedPhrase, setSelectedPhrase] = useState("");
-  const [selectedRandomPhraseFolder, setSelectedRandomPhraseFolder] = useState<string | null>(null);
+  const [useText, setUseText] = useState(initialData?.useText !== undefined ? initialData.useText : true);
+  const [useRandomPhrase, setUseRandomPhrase] = useState(initialData?.useRandomPhrase !== undefined ? initialData.useRandomPhrase : true);
+  const [selectedPhrase, setSelectedPhrase] = useState(initialData?.selectedPhrase || "");
+  const [selectedRandomPhraseFolder, setSelectedRandomPhraseFolder] = useState<string | null>(initialData?.selectedRandomPhraseFolder || null);
   const [selectedPhraseFolder, setSelectedPhraseFolder] = useState<string | null>(null);
   
-  const [useRandomImage, setUseRandomImage] = useState(false);
-  const [selectedImage, setSelectedImage] = useState("");
+  const [useRandomImage, setUseRandomImage] = useState(initialData?.useRandomImage || false);
+  const [selectedImage, setSelectedImage] = useState(initialData?.selectedImage || "");
   const [selectedImageFolder, setSelectedImageFolder] = useState<string | null>(null);
-  const [carouselImages, setCarouselImages] = useState<string[]>([]);
+  const [carouselImages, setCarouselImages] = useState<string[]>(initialData?.carouselImages || []);
 
   const filteredPhrases = selectedPhraseFolder === null 
     ? phrases 
@@ -156,6 +162,28 @@ export function PeriodicPostWizard({
   const filteredImages = selectedImageFolder === null 
     ? images 
     : images.filter(img => img.folder_id === selectedImageFolder);
+
+  const getCurrentWizardData = (): WizardData => ({
+    title,
+    selectedAccount,
+    selectedCampaign,
+    intervalMinutes,
+    postType,
+    useText,
+    useRandomPhrase,
+    selectedPhrase,
+    selectedRandomPhraseFolder,
+    useRandomImage,
+    selectedImage,
+    carouselImages,
+    useIntelligentDelay,
+  });
+
+  const handleNavigateToAdd = (type: 'phrases' | 'images' | 'campaigns') => {
+    if (onNavigateToAddContent) {
+      onNavigateToAddContent(type, getCurrentWizardData(), currentStep);
+    }
+  };
 
   const toggleCarouselImage = (imageId: string) => {
     setCarouselImages(prev => {
@@ -261,47 +289,60 @@ export function PeriodicPostWizard({
         </div>
 
         <div className="space-y-3">
-          <Progress value={progressPercentage} className="h-2" />
-          <div className="flex justify-between">
-            {STEPS.map((step, index) => {
-              const StepIcon = step.icon;
-              const isActive = currentStep === step.id;
-              const isCompleted = currentStep > step.id;
-              
-              return (
-                <div
-                  key={step.id}
-                  className={cn(
-                    "flex flex-col items-center gap-2 flex-1 transition-all",
-                    isActive && "scale-105"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all",
-                      isCompleted && "bg-primary border-primary text-primary-foreground",
-                      isActive && "border-primary bg-primary/10 text-primary",
-                      !isActive && !isCompleted && "border-muted-foreground/30 text-muted-foreground"
-                    )}
+          {/* Linha de progresso conectando os steps */}
+          <div className="relative">
+            <div className="absolute top-5 left-0 right-0 h-0.5 bg-border -z-10">
+              <motion.div
+                className="h-full bg-primary"
+                initial={{ width: "0%" }}
+                animate={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              />
+            </div>
+            <div className="flex justify-between relative">
+              {STEPS.map((step, index) => {
+                const StepIcon = step.icon;
+                const isActive = currentStep === step.id;
+                const isCompleted = currentStep > step.id;
+                
+                return (
+                  <motion.div
+                    key={step.id}
+                    className="flex flex-col items-center gap-2 flex-1"
+                    initial={false}
+                    animate={{
+                      scale: isActive ? 1.05 : 1,
+                    }}
+                    transition={{ duration: 0.2 }}
                   >
-                    {isCompleted ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <StepIcon className="h-5 w-5" />
-                    )}
-                  </div>
-                  <span
-                    className={cn(
-                      "text-xs text-center hidden sm:block transition-colors",
-                      isActive && "text-primary font-medium",
-                      !isActive && "text-muted-foreground"
-                    )}
-                  >
-                    {step.title}
-                  </span>
-                </div>
-              );
-            })}
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all bg-background relative z-10",
+                        isCompleted && "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20",
+                        isActive && "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/30",
+                        !isActive && !isCompleted && "border-border bg-background text-muted-foreground"
+                      )}
+                    >
+                      {isCompleted ? (
+                        <Check className="h-5 w-5" />
+                      ) : (
+                        <StepIcon className="h-5 w-5" />
+                      )}
+                    </div>
+                    <span
+                      className={cn(
+                        "text-xs text-center hidden sm:block transition-all",
+                        isActive && "text-primary font-semibold",
+                        isCompleted && "text-foreground font-medium",
+                        !isActive && !isCompleted && "text-muted-foreground"
+                      )}
+                    >
+                      {step.title}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -406,19 +447,42 @@ export function PeriodicPostWizard({
                         </TooltipContent>
                       </Tooltip>
                     </Label>
-                    <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Sem campanha" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sem campanha</SelectItem>
-                        {campaigns.map((campaign) => (
-                          <SelectItem key={campaign.id} value={campaign.id}>
-                            {campaign.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {campaigns.length === 0 ? (
+                      <Card className="border-2 border-blue-500/50 bg-blue-50 dark:bg-blue-950/20">
+                        <CardContent className="pt-4 pb-4">
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 space-y-2">
+                              <p className="text-sm text-blue-700 dark:text-blue-300">
+                                Nenhuma campanha criada ainda. Crie uma para organizar suas automações.
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleNavigateToAdd('campaigns')}
+                                className="border-blue-600 text-blue-700 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300"
+                              >
+                                Criar Campanha
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Sem campanha" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sem campanha</SelectItem>
+                          {campaigns.map((campaign) => (
+                            <SelectItem key={campaign.id} value={campaign.id}>
+                              {campaign.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
 
@@ -639,8 +703,70 @@ export function PeriodicPostWizard({
 
             <Card className="border-2">
               <CardContent className="pt-6 space-y-6">
+                {/* Aviso se não houver frases */}
+                {phrases.length === 0 && (postType === 'text' || (postType === 'image' || postType === 'carousel')) && (
+                  <Card className="border-2 border-orange-500/50 bg-orange-50 dark:bg-orange-950/20">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-4">
+                        <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                          <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <h4 className="font-semibold text-orange-900 dark:text-orange-100">
+                              Nenhuma frase cadastrada
+                            </h4>
+                            <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                              Você precisa cadastrar pelo menos uma frase para criar posts de texto.
+                            </p>
+                          </div>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleNavigateToAdd('phrases')}
+                            className="bg-orange-600 hover:bg-orange-700"
+                          >
+                            Adicionar Agora
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Aviso se não houver imagens */}
+                {images.length === 0 && (postType === 'image' || postType === 'carousel') && (
+                  <Card className="border-2 border-orange-500/50 bg-orange-50 dark:bg-orange-950/20">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-4">
+                        <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                          <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <h4 className="font-semibold text-orange-900 dark:text-orange-100">
+                              Nenhuma imagem cadastrada
+                            </h4>
+                            <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                              Você precisa fazer upload de pelo menos uma imagem para criar posts visuais.
+                            </p>
+                          </div>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleNavigateToAdd('images')}
+                            className="bg-orange-600 hover:bg-orange-700"
+                          >
+                            Adicionar Agora
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Texto para tipos image e carousel */}
-                {(postType === 'image' || postType === 'carousel') && (
+                {phrases.length > 0 && (postType === 'image' || postType === 'carousel') && (
                   <Card className="bg-gradient-to-r from-muted/80 to-muted/40 border-border/50">
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center justify-between">
