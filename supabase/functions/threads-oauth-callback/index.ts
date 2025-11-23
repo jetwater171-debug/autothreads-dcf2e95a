@@ -76,6 +76,10 @@ Deno.serve(async (req) => {
 
     const longLivedData = await longLivedResponse.json();
     const longLivedToken = longLivedData.access_token;
+    const expiresIn = longLivedData.expires_in; // segundos até expirar
+    
+    // Calcular data de expiração
+    const expiresAt = new Date(Date.now() + (expiresIn * 1000));
 
     console.log('Token de longa duração obtido, buscando ID correto do usuário...');
 
@@ -160,6 +164,8 @@ Deno.serve(async (req) => {
           username,
           profile_picture_url: profilePictureUrl,
           is_active: true,
+          token_expires_at: expiresAt.toISOString(),
+          token_refreshed_at: new Date().toISOString(),
         })
         .eq('id', existingAccount.id);
 
@@ -174,6 +180,8 @@ Deno.serve(async (req) => {
           access_token: longLivedToken,
           username,
           profile_picture_url: profilePictureUrl,
+          token_expires_at: expiresAt.toISOString(),
+          token_refreshed_at: new Date().toISOString(),
         });
 
       if (insertError) throw insertError;

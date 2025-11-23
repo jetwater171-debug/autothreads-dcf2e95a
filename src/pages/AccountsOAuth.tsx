@@ -8,9 +8,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, CheckCircle, XCircle, Sparkles } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle, Sparkles, RefreshCw, Clock, Key } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface ThreadsAccount {
   id: string;
@@ -19,6 +21,8 @@ interface ThreadsAccount {
   profile_picture_url: string | null;
   is_active: boolean;
   connected_at: string;
+  token_expires_at: string | null;
+  token_refreshed_at: string | null;
 }
 
 const AccountsOAuth = () => {
@@ -28,8 +32,45 @@ const AccountsOAuth = () => {
   const [accountId, setAccountId] = useState("");
   const [accessToken, setAccessToken] = useState("");
   const [username, setUsername] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const getTimeUntilExpiration = (expiresAt: string | null) => {
+    if (!expiresAt) return { text: 'Desconhecido', color: 'text-muted-foreground', urgent: false };
+    
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diffMs = expiry.getTime() - now.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (diffMs < 0) {
+      return { text: 'Expirado', color: 'text-destructive', urgent: true };
+    }
+    
+    if (diffDays < 7) {
+      return { 
+        text: `${diffDays}d ${diffHours}h`, 
+        color: 'text-destructive', 
+        urgent: true 
+      };
+    }
+    
+    if (diffDays < 30) {
+      return { 
+        text: `${diffDays} dias`, 
+        color: 'text-yellow-500', 
+        urgent: false 
+      };
+    }
+    
+    return { 
+      text: `${diffDays} dias`, 
+      color: 'text-success', 
+      urgent: false 
+    };
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -119,6 +160,108 @@ const AccountsOAuth = () => {
     }
   };
 
+  const handleRefreshToken = async (accountId: string) => {
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('threads-refresh-token', {
+        body: { accountId },
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Token renovado!",
+        description: "Token válido por mais 60 dias.",
+      });
+      
+      await loadAccounts();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao renovar token",
+        description: error.message,
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefreshAccountInfo = async (accountId: string) => {
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('threads-refresh-account-info', {
+        body: { accountId },
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Informações atualizadas!",
+        description: "Foto de perfil e username atualizados.",
+      });
+      
+      await loadAccounts();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar",
+        description: error.message,
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefreshAllAccounts = async () => {
+    setRefreshing(true);
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const account of accounts) {
+        try {
+          // Atualizar informações
+          await supabase.functions.invoke('threads-refresh-account-info', {
+            body: { accountId: account.id },
+          });
+          
+          // Se o token estiver próximo de expirar (menos de 30 dias), renovar
+          if (account.token_expires_at) {
+            const daysUntilExpiry = Math.floor(
+              (new Date(account.token_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+            );
+            
+            if (daysUntilExpiry < 30) {
+              await supabase.functions.invoke('threads-refresh-token', {
+                body: { accountId: account.id },
+              });
+            }
+          }
+          
+          successCount++;
+        } catch (error) {
+          console.error(`Erro ao atualizar conta ${account.username}:`, error);
+          errorCount++;
+        }
+      }
+      
+      toast({
+        title: "Atualização concluída",
+        description: `${successCount} contas atualizadas${errorCount > 0 ? `, ${errorCount} com erro` : ''}.`,
+      });
+      
+      await loadAccounts();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro na atualização",
+        description: error.message,
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
@@ -153,13 +296,24 @@ const AccountsOAuth = () => {
               Gerencie suas contas conectadas
             </p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Conta
-              </Button>
-            </DialogTrigger>
+          
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleRefreshAllAccounts}
+              disabled={refreshing}
+            >
+              <RefreshCw className={cn("mr-2 h-4 w-4", refreshing && "animate-spin")} />
+              Atualizar Todas
+            </Button>
+            
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar Conta
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Conectar Conta do Threads</DialogTitle>
@@ -227,49 +381,101 @@ const AccountsOAuth = () => {
                 </TabsContent>
               </Tabs>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {accounts.map((account) => (
-            <Card key={account.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={account.profile_picture_url || undefined} alt={account.username || "Profile"} />
-                      <AvatarFallback>{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
-                    </Avatar>
-                    <CardTitle className="text-lg">
-                      {account.username || "Conta Threads"}
-                    </CardTitle>
+          {accounts.map((account) => {
+            const timeInfo = getTimeUntilExpiration(account.token_expires_at);
+            
+            return (
+              <Card key={account.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={account.profile_picture_url || undefined} alt={account.username || "Profile"} />
+                        <AvatarFallback>{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="text-lg">
+                          {account.username || "Conta Threads"}
+                        </CardTitle>
+                        <CardDescription className="text-xs">ID: {account.account_id}</CardDescription>
+                      </div>
+                    </div>
+                    {account.is_active ? (
+                      <CheckCircle className="h-5 w-5 text-success" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-destructive" />
+                    )}
                   </div>
-                  {account.is_active ? (
-                    <CheckCircle className="h-5 w-5 text-success" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-destructive" />
+                </CardHeader>
+                
+                <CardContent className="space-y-3">
+                  {/* Tempo até expirar */}
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Token expira em:</span>
+                    </div>
+                    <Badge variant={timeInfo.urgent ? "destructive" : "secondary"}>
+                      <span className={timeInfo.color}>{timeInfo.text}</span>
+                    </Badge>
+                  </div>
+                  
+                  {/* Data de conexão */}
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Conectado em</span>
+                    <span>{new Date(account.connected_at).toLocaleDateString("pt-BR")}</span>
+                  </div>
+                  
+                  {/* Última atualização */}
+                  {account.token_refreshed_at && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>Última renovação</span>
+                      <span>{new Date(account.token_refreshed_at).toLocaleDateString("pt-BR")}</span>
+                    </div>
                   )}
-                </div>
-                <CardDescription>ID: {account.account_id}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Conectado em{" "}
-                    {new Date(account.connected_at).toLocaleDateString("pt-BR")}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(account.id)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  
+                  {/* Botões de ação */}
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleRefreshToken(account.id)}
+                      disabled={refreshing}
+                    >
+                      <Key className="mr-2 h-4 w-4" />
+                      Renovar Token
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleRefreshAccountInfo(account.id)}
+                      disabled={refreshing}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Atualizar Info
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(account.id)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {accounts.length === 0 && !loading && (
