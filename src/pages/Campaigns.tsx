@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Calendar, CheckCircle, XCircle, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Calendar, CheckCircle, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -57,7 +57,6 @@ const Campaigns = () => {
 
       if (error) throw error;
 
-      // Count automations for each campaign
       const campaignsWithCounts = await Promise.all(
         (campaignsData || []).map(async (campaign) => {
           const { count } = await supabase
@@ -164,7 +163,6 @@ const Campaigns = () => {
 
   const handleEndCampaign = async (id: string) => {
     try {
-      // Update campaign status
       const { error: campaignError } = await supabase
         .from("campaigns")
         .update({ status: 'ended' })
@@ -172,7 +170,6 @@ const Campaigns = () => {
 
       if (campaignError) throw campaignError;
 
-      // Pause all automations in this campaign
       const { error: postsError } = await supabase
         .from("periodic_posts")
         .update({ is_active: false })
@@ -233,12 +230,12 @@ const Campaigns = () => {
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button size="lg">
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Campanha
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Nova Campanha</DialogTitle>
                 <DialogDescription>
@@ -247,8 +244,8 @@ const Campaigns = () => {
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Nome da Campanha</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="title" className="text-base font-semibold">Nome da Campanha</Label>
                   <Input
                     id="title"
                     type="text"
@@ -257,34 +254,37 @@ const Campaigns = () => {
                     required
                     maxLength={100}
                     placeholder="Ex: Black Friday 2024"
+                    className="h-12"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Data de Início</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="startDate" className="text-base font-semibold">Data de Início</Label>
                     <Input
                       id="startDate"
                       type="datetime-local"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
                       required
+                      className="h-12"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">Data de Término</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="endDate" className="text-base font-semibold">Data de Término</Label>
                     <Input
                       id="endDate"
                       type="datetime-local"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
                       required
+                      className="h-12"
                     />
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-end gap-3 pt-4">
                   <Button
                     type="button"
                     variant="outline"
@@ -307,7 +307,7 @@ const Campaigns = () => {
             const status = getCampaignStatus(campaign);
             
             return (
-              <Card key={campaign.id}>
+              <Card key={campaign.id} className="border-2 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
@@ -317,9 +317,9 @@ const Campaigns = () => {
                           {status.label}
                         </Badge>
                       </CardTitle>
-                      <CardDescription className="space-y-1">
+                      <CardDescription className="space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-3 w-3" />
+                          <Calendar className="h-3.5 w-3.5" />
                           <span>
                             {format(new Date(campaign.start_date), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                             {" → "}
@@ -366,12 +366,12 @@ const Campaigns = () => {
         </div>
 
         {campaigns.length === 0 && !loading && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
+          <Card className="border-2">
+            <CardContent className="flex flex-col items-center justify-center py-16">
               <p className="text-muted-foreground mb-4">
                 Nenhuma campanha criada ainda
               </p>
-              <Button onClick={() => setOpen(true)}>
+              <Button onClick={() => setOpen(true)} size="lg">
                 <Plus className="mr-2 h-4 w-4" />
                 Criar Primeira Campanha
               </Button>

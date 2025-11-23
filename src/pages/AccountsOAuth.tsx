@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, CheckCircle, XCircle, Sparkles, RefreshCw, Clock, Key } from "lucide-react";
+import { Plus, Trash2, Sparkles, RefreshCw, Clock, Key } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -220,12 +220,10 @@ const AccountsOAuth = () => {
       
       for (const account of accounts) {
         try {
-          // Atualizar informações
           await supabase.functions.invoke('threads-refresh-account-info', {
             body: { accountId: account.id },
           });
           
-          // Se o token estiver próximo de expirar (menos de 30 dias), renovar
           if (account.token_expires_at) {
             const daysUntilExpiry = Math.floor(
               (new Date(account.token_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
@@ -309,94 +307,97 @@ const AccountsOAuth = () => {
             
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button size="lg">
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar Conta
                 </Button>
               </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Conectar Conta do Threads</DialogTitle>
-                <DialogDescription>
-                  Escolha como deseja conectar sua conta
-                </DialogDescription>
-              </DialogHeader>
-              <Tabs defaultValue="oauth" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="oauth">OAuth (Recomendado)</TabsTrigger>
-                  <TabsTrigger value="manual">Manual</TabsTrigger>
-                </TabsList>
-                <TabsContent value="oauth" className="space-y-4">
-                  <div className="space-y-4 py-4">
-                    <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-lg">
-                      <Sparkles className="h-5 w-5 text-primary" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Conexão Segura</p>
-                        <p className="text-xs text-muted-foreground">
-                          Conecte sua conta de forma segura através do OAuth do Threads
-                        </p>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Conectar Conta do Threads</DialogTitle>
+                  <DialogDescription>
+                    Escolha como deseja conectar sua conta
+                  </DialogDescription>
+                </DialogHeader>
+                <Tabs defaultValue="oauth" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="oauth">OAuth (Recomendado)</TabsTrigger>
+                    <TabsTrigger value="manual">Manual</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="oauth" className="space-y-4">
+                    <div className="space-y-6 py-4">
+                      <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                        <Sparkles className="h-5 w-5 text-primary flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">Conexão Segura</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Conecte sua conta de forma segura através do OAuth do Threads
+                          </p>
+                        </div>
                       </div>
+                      <Button onClick={handleOAuthConnect} className="w-full" size="lg">
+                        Conectar com Threads
+                      </Button>
                     </div>
-                    <Button onClick={handleOAuthConnect} className="w-full">
-                      Conectar com Threads
-                    </Button>
-                  </div>
-                </TabsContent>
-                <TabsContent value="manual">
-                  <form onSubmit={handleAddManual} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="account-id">ID da Conta</Label>
-                      <Input
-                        id="account-id"
-                        value={accountId}
-                        onChange={(e) => setAccountId(e.target.value)}
-                        required
-                        placeholder="Ex: 123456789"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="access-token">Token de Acesso</Label>
-                      <Input
-                        id="access-token"
-                        type="password"
-                        value={accessToken}
-                        onChange={(e) => setAccessToken(e.target.value)}
-                        required
-                        placeholder="Seu token de acesso"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username (opcional)</Label>
-                      <Input
-                        id="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="@seunome"
-                      />
-                    </div>
-                    <Button type="submit" className="w-full">
-                      Conectar Conta
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            </DialogContent>
+                  </TabsContent>
+                  <TabsContent value="manual">
+                    <form onSubmit={handleAddManual} className="space-y-6 py-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="account-id" className="text-base font-semibold">ID da Conta</Label>
+                        <Input
+                          id="account-id"
+                          value={accountId}
+                          onChange={(e) => setAccountId(e.target.value)}
+                          required
+                          placeholder="Ex: 123456789"
+                          className="h-12"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="access-token" className="text-base font-semibold">Token de Acesso</Label>
+                        <Input
+                          id="access-token"
+                          type="password"
+                          value={accessToken}
+                          onChange={(e) => setAccessToken(e.target.value)}
+                          required
+                          placeholder="Seu token de acesso"
+                          className="h-12"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="username" className="text-base font-semibold">Username (opcional)</Label>
+                        <Input
+                          id="username"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="@seunome"
+                          className="h-12"
+                        />
+                      </div>
+                      <Button type="submit" className="w-full" size="lg">
+                        Conectar Conta
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              </DialogContent>
             </Dialog>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {accounts.map((account) => {
             const timeInfo = getTimeUntilExpiration(account.token_expires_at);
             
             return (
-              <Card key={account.id}>
+              <Card key={account.id} className="border-2 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Avatar>
+                      <Avatar className="h-12 w-12">
                         <AvatarImage src={account.profile_picture_url || undefined} alt={account.username || "Profile"} />
-                        <AvatarFallback>{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
+                        <AvatarFallback className="text-lg">{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
                       </Avatar>
                       <div>
                         <CardTitle className="text-lg">
@@ -405,16 +406,10 @@ const AccountsOAuth = () => {
                         <CardDescription className="text-xs">ID: {account.account_id}</CardDescription>
                       </div>
                     </div>
-                    {account.is_active ? (
-                      <CheckCircle className="h-5 w-5 text-success" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-destructive" />
-                    )}
                   </div>
                 </CardHeader>
                 
-                <CardContent className="space-y-3">
-                  {/* Tempo até expirar */}
+                <CardContent className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
@@ -425,13 +420,11 @@ const AccountsOAuth = () => {
                     </Badge>
                   </div>
                   
-                  {/* Data de conexão */}
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>Conectado em</span>
                     <span>{new Date(account.connected_at).toLocaleDateString("pt-BR")}</span>
                   </div>
                   
-                  {/* Última atualização */}
                   {account.token_refreshed_at && (
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <span>Última renovação</span>
@@ -439,7 +432,6 @@ const AccountsOAuth = () => {
                     </div>
                   )}
                   
-                  {/* Botões de ação */}
                   <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"
@@ -479,12 +471,12 @@ const AccountsOAuth = () => {
         </div>
 
         {accounts.length === 0 && !loading && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
+          <Card className="border-2">
+            <CardContent className="flex flex-col items-center justify-center py-16">
               <p className="text-muted-foreground mb-4">
                 Nenhuma conta conectada ainda
               </p>
-              <Button onClick={() => setOpen(true)}>
+              <Button onClick={() => setOpen(true)} size="lg">
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Primeira Conta
               </Button>

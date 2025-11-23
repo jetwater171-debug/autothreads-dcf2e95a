@@ -6,12 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Trash2, Edit, Loader2, ImageIcon, FolderInput as FolderInputIcon } from "lucide-react";
+import { Upload, Loader2, ImageIcon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { FolderManager } from "@/components/FolderManager";
 import { DndContext, DragOverlay, DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core";
 import { DraggableImage } from "@/components/DraggableImage";
@@ -92,7 +90,6 @@ const Images = () => {
 
       if (error) throw error;
 
-      // Count items in each folder
       const foldersWithCounts = await Promise.all(
         (data || []).map(async (folder) => {
           const { count } = await supabase
@@ -119,7 +116,6 @@ const Images = () => {
 
     const file = files[0];
 
-    // Validações
     const maxSize = 10 * 1024 * 1024; // 10MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
@@ -147,7 +143,6 @@ const Images = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Upload para storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
@@ -158,12 +153,10 @@ const Images = () => {
 
       if (uploadError) throw uploadError;
 
-      // Obter URL pública
       const { data: { publicUrl } } = supabase.storage
         .from('post-images')
         .getPublicUrl(filePath);
 
-      // Salvar no banco
       const { error: dbError } = await supabase
         .from('images')
         .insert({
@@ -196,14 +189,12 @@ const Images = () => {
 
   const handleDelete = async (image: Image) => {
     try {
-      // Deletar do storage
       const { error: storageError } = await supabase.storage
         .from('post-images')
         .remove([image.file_path]);
 
       if (storageError) throw storageError;
 
-      // Deletar do banco
       const { error: dbError } = await supabase
         .from('images')
         .delete()
@@ -323,176 +314,172 @@ const Images = () => {
         onDragCancel={handleDragCancel}
       >
         <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Imagens</h1>
-            <p className="text-muted-foreground">
-              Gerencie suas imagens para posts
-            </p>
-          </div>
-          <div>
-            <Label htmlFor="file-upload" className="cursor-pointer">
-              <Button disabled={uploading} asChild>
-                <span>
-                  {uploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Enviar Imagem
-                    </>
-                  )}
-                </span>
-              </Button>
-            </Label>
-            <Input
-              id="file-upload"
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </div>
-        </div>
-
-        <FolderManager
-          folders={folders}
-          type="image"
-          selectedFolder={selectedFolder}
-          onFolderSelect={setSelectedFolder}
-          onFoldersUpdate={() => {
-            loadFolders();
-            loadImages();
-          }}
-          overId={overId}
-        />
-
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <div className="aspect-square bg-muted animate-pulse" />
-              </Card>
-            ))}
-          </div>
-        ) : filteredImages.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Imagens</h1>
               <p className="text-muted-foreground">
-                {selectedFolder ? "Nenhuma imagem nesta pasta" : "Nenhuma imagem cadastrada ainda"}
+                Gerencie suas imagens para posts
               </p>
-            </CardContent>
-          </Card>
-        ) : images.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">
-                Nenhuma imagem cadastrada ainda
-              </p>
-              <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
-                Faça upload de imagens para usar em seus posts
-              </p>
-              <Label htmlFor="file-upload-empty" className="cursor-pointer">
-                <Button asChild>
+            </div>
+            <div>
+              <Label htmlFor="file-upload" className="cursor-pointer">
+                <Button disabled={uploading} asChild size="lg">
                   <span>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Enviar Primeira Imagem
+                    {uploading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Enviar Imagem
+                      </>
+                    )}
                   </span>
                 </Button>
               </Label>
               <Input
-                id="file-upload-empty"
+                id="file-upload"
                 type="file"
                 accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
                 onChange={handleFileSelect}
                 className="hidden"
               />
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredImages.map((image) => (
-              <DraggableImage
-                key={image.id}
-                id={image.id}
-                publicUrl={image.public_url}
-                fileName={image.file_name}
-                altText={image.alt_text}
-                isDragging={activeId === image.id}
-                onEdit={() => {
-                  setEditingImage(image);
-                  setAltText(image.alt_text || "");
-                }}
-                onDelete={() => handleDelete(image)}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Dialogs for Edit */}
-        <Dialog open={!!editingImage} onOpenChange={(open) => {
-          if (!open) {
-            setEditingImage(null);
-            setAltText("");
-          }
-        }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar Alt Text</DialogTitle>
-              <DialogDescription>
-                Adicione uma descrição para acessibilidade
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              {editingImage && (
-                <div>
-                  <img
-                    src={editingImage.public_url}
-                    alt={editingImage.file_name}
-                    className="w-full h-48 object-cover rounded"
-                  />
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="alt-text">Texto Alternativo</Label>
-                <Textarea
-                  id="alt-text"
-                  value={altText}
-                  onChange={(e) => setAltText(e.target.value)}
-                  placeholder="Descreva a imagem..."
-                  rows={3}
-                />
-              </div>
-              <Button onClick={handleUpdateAltText} className="w-full">
-                Salvar
-              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
 
-        <DragOverlay>
-          {activeImage && (
-            <Card className="overflow-hidden opacity-90 shadow-2xl rotate-3">
-              <div className="relative aspect-square">
-                <img
-                  src={activeImage.public_url}
-                  alt={activeImage.alt_text || activeImage.file_name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <CardContent className="p-3">
-                <p className="text-sm font-medium truncate">{activeImage.file_name}</p>
+          <FolderManager
+            folders={folders}
+            type="image"
+            selectedFolder={selectedFolder}
+            onFolderSelect={setSelectedFolder}
+            onFoldersUpdate={() => {
+              loadFolders();
+              loadImages();
+            }}
+            overId={overId}
+          />
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <Card key={i} className="overflow-hidden border-2">
+                  <div className="aspect-square bg-muted animate-pulse" />
+                </Card>
+              ))}
+            </div>
+          ) : filteredImages.length === 0 ? (
+            <Card className="border-2">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <ImageIcon className="h-16 w-16 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground mb-4">
+                  {selectedFolder ? "Nenhuma imagem nesta pasta" : "Nenhuma imagem cadastrada ainda"}
+                </p>
+                {!selectedFolder && (
+                  <>
+                    <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
+                      Faça upload de imagens para usar em seus posts
+                    </p>
+                    <Label htmlFor="file-upload-empty" className="cursor-pointer">
+                      <Button asChild size="lg">
+                        <span>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Enviar Primeira Imagem
+                        </span>
+                      </Button>
+                    </Label>
+                    <Input
+                      id="file-upload-empty"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </>
+                )}
               </CardContent>
             </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filteredImages.map((image) => (
+                <DraggableImage
+                  key={image.id}
+                  id={image.id}
+                  publicUrl={image.public_url}
+                  fileName={image.file_name}
+                  altText={image.alt_text}
+                  isDragging={activeId === image.id}
+                  onEdit={() => {
+                    setEditingImage(image);
+                    setAltText(image.alt_text || "");
+                  }}
+                  onDelete={() => handleDelete(image)}
+                />
+              ))}
+            </div>
           )}
-        </DragOverlay>
-      </div>
-    </DndContext>
+
+          {/* Dialogs for Edit */}
+          <Dialog open={!!editingImage} onOpenChange={(open) => {
+            if (!open) {
+              setEditingImage(null);
+              setAltText("");
+            }
+          }}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Editar Alt Text</DialogTitle>
+                <DialogDescription>
+                  Adicione uma descrição para acessibilidade
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6">
+                {editingImage && (
+                  <div className="rounded-lg overflow-hidden border-2">
+                    <img
+                      src={editingImage.public_url}
+                      alt={editingImage.file_name}
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                )}
+                <div className="space-y-3">
+                  <Label htmlFor="alt-text" className="text-base font-semibold">Texto Alternativo</Label>
+                  <Textarea
+                    id="alt-text"
+                    value={altText}
+                    onChange={(e) => setAltText(e.target.value)}
+                    placeholder="Descreva a imagem..."
+                    rows={4}
+                    className="resize-none"
+                  />
+                </div>
+                <Button onClick={handleUpdateAltText} className="w-full" size="lg">
+                  Salvar
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <DragOverlay>
+            {activeImage && (
+              <Card className="overflow-hidden opacity-90 shadow-2xl rotate-3 border-2">
+                <div className="relative aspect-square">
+                  <img
+                    src={activeImage.public_url}
+                    alt={activeImage.alt_text || activeImage.file_name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <CardContent className="p-4">
+                  <p className="text-sm font-medium truncate">{activeImage.file_name}</p>
+                </CardContent>
+              </Card>
+            )}
+          </DragOverlay>
+        </div>
+      </DndContext>
     </Layout>
   );
 };
