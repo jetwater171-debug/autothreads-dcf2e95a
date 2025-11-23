@@ -13,7 +13,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { accountId, text, imageUrls, postType } = await req.json();
+    const { accountId, text, imageUrls, postType, userId } = await req.json();
+
+    console.log(`📥 Recebido: accountId=${accountId}, postType=${postType}, userId=${userId}`);
 
     if (!accountId) throw new Error('accountId é obrigatório');
 
@@ -30,31 +32,61 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) throw new Error('Token de autenticação não fornecido');
 
-    const supabaseClient = createClient(
+    // Verificar se é uma chamada com SERVICE_ROLE_KEY
+    const isServiceRole = authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+    
+    let authenticatedUserId: string;
+
+    if (isServiceRole && userId) {
+      // Chamada interna (cron/periodic posts) com SERVICE_ROLE_KEY e userId fornecido
+      console.log(`🔐 Autenticação via SERVICE_ROLE para user: ${userId}`);
+      authenticatedUserId = userId;
+    } else {
+      // Chamada normal do frontend - validar usuário
+      console.log(`🔐 Autenticação via token do usuário`);
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: { headers: { Authorization: authHeader } }
+        }
+      );
+
+      const {
+        data: { user },
+      } = await supabaseClient.auth.getUser();
+
+      if (!user) throw new Error('Usuário não autenticado');
+      authenticatedUserId = user.id;
+    }
+
+    // Buscar conta vinculada usando SERVICE_ROLE_KEY para evitar problemas de RLS
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: { headers: { Authorization: authHeader } }
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
-
-    if (!user) throw new Error('Usuário não autenticado');
-
-    // Buscar conta vinculada
-    const { data: account, error: accountError } = await supabaseClient
+    const { data: account, error: accountError } = await supabaseAdmin
       .from('threads_accounts')
-      .select('account_id, access_token')
+      .select('account_id, access_token, username')
       .eq('id', accountId)
-      .eq('user_id', user.id)
+      .eq('user_id', authenticatedUserId)
       .single();
 
-    if (accountError || !account) throw new Error('Conta não encontrada');
+    if (accountError || !account) {
+      console.error(`❌ Conta não encontrada: accountId=${accountId}, userId=${authenticatedUserId}`, accountError);
+      throw new Error('Conta não encontrada');
+    }
 
-    console.log(`Criando post tipo ${postType}...`);
+    console.log(`✅ Conta encontrada: @${account.username}`);
+
+    console.log(`📤 Criando post tipo ${postType} para @${account.username}...`);
+    if (imageUrls && imageUrls.length > 0) {
+      console.log(`🖼️  Imagens: ${imageUrls.length}x`);
+    }
+    if (text) {
+      console.log(`📝 Texto: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
+    }
 
     //
     // ================================
@@ -185,8 +217,8 @@ Deno.serve(async (req) => {
       creationId = createData.id;
     }
 
-    console.log("Container criado:", creationId);
-    console.log("Aguardando processamento...");
+    console.log(`✅ Container criado: ${creationId}`);
+    console.log("⏳ Aguardando 3s para processamento...");
 
     await sleep(3000);
 
@@ -216,6 +248,8 @@ Deno.serve(async (req) => {
 
     const publishData = await publishResponse.json();
 
+    console.log(`🎉 Post publicado com sucesso! ID: ${publishData.id}`);
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -228,7 +262,8 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Erro geral:", error);
+    console.error("❌ ERRO:", error);
+    console.error("❌ Stack:", (error as Error).stack);
 
     return new Response(
       JSON.stringify({
