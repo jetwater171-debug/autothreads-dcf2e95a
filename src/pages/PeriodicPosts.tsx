@@ -68,7 +68,7 @@ const PeriodicPosts = () => {
   const [selectedAccount, setSelectedAccount] = useState("");
   const [intervalMinutes, setIntervalMinutes] = useState("10");
   const [postType, setPostType] = useState<'text' | 'image' | 'carousel'>('text');
-  const [useText, setUseText] = useState(false);
+  const [useText, setUseText] = useState(true);
   const [useRandomPhrase, setUseRandomPhrase] = useState(true);
   const [selectedPhrase, setSelectedPhrase] = useState("");
   const [useRandomImage, setUseRandomImage] = useState(false);
@@ -268,7 +268,7 @@ const PeriodicPosts = () => {
     setSelectedAccount("");
     setIntervalMinutes("10");
     setPostType('text');
-    setUseText(false);
+    setUseText(true);
     setUseRandomPhrase(true);
     setSelectedPhrase("");
     setUseRandomImage(false);
@@ -494,75 +494,84 @@ const PeriodicPosts = () => {
                             </div>
                           ) : (
                             <>
-                              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                                <Label htmlFor="randomImage" className="text-sm font-medium">Imagem Aleatória</Label>
-                                <Switch
-                                  id="randomImage"
-                                  checked={useRandomImage}
-                                  onCheckedChange={setUseRandomImage}
-                                />
-                              </div>
-
-                              {!useRandomImage && (
-                                <div className="space-y-2">
-                                  <Label htmlFor="image">Selecione uma imagem</Label>
-                                  <Select value={selectedImage} onValueChange={setSelectedImage} required>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Escolha a imagem" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {images.map((image) => (
-                                        <SelectItem key={image.id} value={image.id}>
-                                          <div className="flex items-center gap-2">
-                                            <img src={image.public_url} className="h-8 w-8 object-cover rounded" alt="" />
-                                            <span className="truncate">{image.file_name}</span>
-                                          </div>
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              )}
-
-                              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                                <Label htmlFor="useText" className="text-sm font-medium">Adicionar Texto (opcional)</Label>
-                                <Switch
-                                  id="useText"
-                                  checked={useText}
-                                  onCheckedChange={setUseText}
-                                />
-                              </div>
-
-                              {useText && (
-                                <div className="space-y-4 pl-4 border-l-2 border-muted">
-                                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                                    <Label htmlFor="randomPhrase" className="text-sm font-medium">Frase Aleatória</Label>
-                                    <Switch
-                                      id="randomPhrase"
-                                      checked={useRandomPhrase}
-                                      onCheckedChange={setUseRandomPhrase}
-                                    />
+                              {/* Seção de Texto (Destaque) */}
+                              <div className="space-y-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                                <div className="flex items-center justify-between">
+                                  <div className="space-y-1">
+                                    <Label htmlFor="useText" className="text-sm font-semibold">💬 Texto da Legenda</Label>
+                                    <p className="text-xs text-muted-foreground">Recomendado para melhor engajamento</p>
                                   </div>
-
-                                  {!useRandomPhrase && (
-                                    <div className="space-y-2">
-                                      <Label htmlFor="phrase">Selecione uma frase</Label>
-                                      <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Escolha a frase" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {phrases.map((phrase) => (
-                                            <SelectItem key={phrase.id} value={phrase.id}>
-                                              <div className="max-w-md truncate">{phrase.content}</div>
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  )}
+                                  <Switch
+                                    id="useText"
+                                    checked={useText}
+                                    onCheckedChange={setUseText}
+                                  />
                                 </div>
-                              )}
+
+                                {useText && (
+                                  <div className="space-y-3 pt-2">
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-background">
+                                      <Label htmlFor="randomPhrase" className="text-sm font-medium">Frase Aleatória</Label>
+                                      <Switch
+                                        id="randomPhrase"
+                                        checked={useRandomPhrase}
+                                        onCheckedChange={setUseRandomPhrase}
+                                      />
+                                    </div>
+
+                                    {!useRandomPhrase && (
+                                      <div className="space-y-2">
+                                        <Label htmlFor="phrase">Selecione uma frase</Label>
+                                        <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
+                                          <SelectTrigger className="bg-background">
+                                            <SelectValue placeholder="Escolha a frase" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {phrases.map((phrase) => (
+                                              <SelectItem key={phrase.id} value={phrase.id}>
+                                                <div className="max-w-md truncate">{phrase.content}</div>
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Seção de Imagem */}
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                                  <Label htmlFor="randomImage" className="text-sm font-medium">Imagem Aleatória</Label>
+                                  <Switch
+                                    id="randomImage"
+                                    checked={useRandomImage}
+                                    onCheckedChange={setUseRandomImage}
+                                  />
+                                </div>
+
+                                {!useRandomImage && (
+                                  <div className="space-y-2">
+                                    <Label htmlFor="image">Selecione uma imagem</Label>
+                                    <Select value={selectedImage} onValueChange={setSelectedImage} required>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Escolha a imagem" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {images.map((image) => (
+                                          <SelectItem key={image.id} value={image.id}>
+                                            <div className="flex items-center gap-2">
+                                              <img src={image.public_url} className="h-8 w-8 object-cover rounded" alt="" />
+                                              <span className="truncate">{image.file_name}</span>
+                                            </div>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
+                              </div>
                             </>
                           )}
                         </div>
@@ -577,6 +586,53 @@ const PeriodicPosts = () => {
                             </div>
                           ) : (
                             <>
+                              {/* Seção de Texto (Destaque) */}
+                              <div className="space-y-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                                <div className="flex items-center justify-between">
+                                  <div className="space-y-1">
+                                    <Label htmlFor="useTextCarousel" className="text-sm font-semibold">💬 Texto da Legenda</Label>
+                                    <p className="text-xs text-muted-foreground">Recomendado para melhor engajamento</p>
+                                  </div>
+                                  <Switch
+                                    id="useTextCarousel"
+                                    checked={useText}
+                                    onCheckedChange={setUseText}
+                                  />
+                                </div>
+
+                                {useText && (
+                                  <div className="space-y-3 pt-2">
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-background">
+                                      <Label htmlFor="randomPhraseCarousel" className="text-sm font-medium">Frase Aleatória</Label>
+                                      <Switch
+                                        id="randomPhraseCarousel"
+                                        checked={useRandomPhrase}
+                                        onCheckedChange={setUseRandomPhrase}
+                                      />
+                                    </div>
+
+                                    {!useRandomPhrase && (
+                                      <div className="space-y-2">
+                                        <Label htmlFor="phraseCarousel">Selecione uma frase</Label>
+                                        <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
+                                          <SelectTrigger className="bg-background">
+                                            <SelectValue placeholder="Escolha a frase" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {phrases.map((phrase) => (
+                                              <SelectItem key={phrase.id} value={phrase.id}>
+                                                <div className="max-w-md truncate">{phrase.content}</div>
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Seção de Imagens do Carrossel */}
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                   <Label>Selecione as imagens</Label>
@@ -615,46 +671,6 @@ const PeriodicPosts = () => {
                                   <p className="text-xs text-destructive">Selecione pelo menos 2 imagens</p>
                                 )}
                               </div>
-
-                              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                                <Label htmlFor="useTextCarousel" className="text-sm font-medium">Adicionar Texto (opcional)</Label>
-                                <Switch
-                                  id="useTextCarousel"
-                                  checked={useText}
-                                  onCheckedChange={setUseText}
-                                />
-                              </div>
-
-                              {useText && (
-                                <div className="space-y-4 pl-4 border-l-2 border-muted">
-                                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                                    <Label htmlFor="randomPhraseCarousel" className="text-sm font-medium">Frase Aleatória</Label>
-                                    <Switch
-                                      id="randomPhraseCarousel"
-                                      checked={useRandomPhrase}
-                                      onCheckedChange={setUseRandomPhrase}
-                                    />
-                                  </div>
-
-                                  {!useRandomPhrase && (
-                                    <div className="space-y-2">
-                                      <Label htmlFor="phraseCarousel">Selecione uma frase</Label>
-                                      <Select value={selectedPhrase} onValueChange={setSelectedPhrase} required>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Escolha a frase" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {phrases.map((phrase) => (
-                                            <SelectItem key={phrase.id} value={phrase.id}>
-                                              <div className="max-w-md truncate">{phrase.content}</div>
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
                             </>
                           )}
                         </div>
