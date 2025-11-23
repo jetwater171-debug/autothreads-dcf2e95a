@@ -77,67 +77,45 @@ const Layout = ({
   }];
   return <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-72 border-r border-border/40 glass relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] via-transparent to-transparent pointer-events-none" />
+      <aside className="w-64 border-r border-border bg-card relative overflow-hidden">
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
         
-        <div className="py-8 px-6 relative z-10">
-          <div className="mb-12 flex items-center justify-center">
-            <img src={logo} alt="Auto Threads" className="h-14 w-auto object-contain opacity-90" />
+        <div className="p-6 relative z-10">
+          <div className="mb-8 flex items-center justify-center">
+            <img src={logo} alt="Auto Threads" className="h-16 w-auto object-contain" />
           </div>
           
-          <nav className="space-y-1.5">
+          <nav className="space-y-1">
             {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return <Link key={item.path} to={item.path} className="block">
-                  <Button 
-                    variant="ghost" 
-                    className={cn(
-                      "w-full justify-start text-[15px] h-11 px-4 font-normal",
-                      "transition-all duration-200 ease-out",
-                      "hover:bg-primary/[0.06] hover:translate-x-0.5",
-                      "group relative",
-                      isActive && "bg-primary/[0.08] text-primary font-medium shadow-apple"
-                    )}
-                  >
-                    <Icon className={cn(
-                      "mr-3.5 h-[18px] w-[18px] transition-all duration-200",
-                      "group-hover:scale-105",
-                      isActive ? "text-primary" : "text-muted-foreground"
-                    )} />
-                    <span>{item.label}</span>
-                    {isActive && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-7 bg-primary rounded-r" />
-                    )}
+                  <Button variant="ghost" className={cn("w-full justify-start relative overflow-hidden transition-all duration-300", "hover:bg-primary/10 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/10", "group", isActive && "bg-primary/20 text-primary font-medium border border-primary/30 shadow-md shadow-primary/20")}>
+                    <Icon className={cn("mr-3 h-4 w-4 transition-transform duration-300 group-hover:scale-110", isActive && "text-primary")} />
+                    <span className="relative z-10">{item.label}</span>
+                    {isActive && <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent" />}
                   </Button>
                 </Link>;
           })}
           </nav>
         </div>
         
-        <div className="absolute bottom-8 left-6 right-6 z-10 space-y-1.5">
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start h-10 font-normal text-[15px] hover:bg-muted/50 transition-all duration-200" 
-            onClick={toggleTheme}
-          >
-            {theme === "dark" ? <Sun className="mr-3 h-[17px] w-[17px]" /> : <Moon className="mr-3 h-[17px] w-[17px]" />}
+        <div className="absolute bottom-6 left-6 right-6 z-10 space-y-2">
+          <Button variant="ghost" className="w-full justify-start hover:bg-primary/10 transition-all duration-300" onClick={toggleTheme}>
+            {theme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
             {theme === "dark" ? "Modo Claro" : "Modo Escuro"}
           </Button>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start h-10 font-normal text-[15px] text-destructive/80 hover:text-destructive hover:bg-destructive/[0.06] transition-all duration-200" 
-            onClick={handleLogout}
-          >
-            <LogOut className="mr-3 h-[17px] w-[17px]" />
+          <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-300 hover:shadow-lg hover:shadow-destructive/10" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
             Sair
           </Button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto bg-background">
-        <div className="max-w-[1400px] mx-auto px-12 py-10">{children}</div>
+      <main className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="container mx-auto p-8">{children}</div>
       </main>
     </div>;
 };
