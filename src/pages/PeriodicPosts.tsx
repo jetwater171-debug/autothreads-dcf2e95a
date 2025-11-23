@@ -53,6 +53,7 @@ interface Image {
   file_name: string;
   public_url: string;
   alt_text: string | null;
+  folder_id: string | null;
 }
 
 interface ThreadsAccount {
@@ -65,6 +66,7 @@ interface ThreadsAccount {
 interface Phrase {
   id: string;
   content: string;
+  folder_id: string | null;
 }
 
 interface Campaign {
@@ -73,12 +75,22 @@ interface Campaign {
   status: string;
 }
 
+interface Folder {
+  id: string;
+  name: string;
+  type: string;
+}
+
 const PeriodicPosts = () => {
   const [posts, setPosts] = useState<PeriodicPost[]>([]);
   const [accounts, setAccounts] = useState<ThreadsAccount[]>([]);
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [images, setImages] = useState<Image[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [phraseFolders, setPhraseFolders] = useState<Folder[]>([]);
+  const [imageFolders, setImageFolders] = useState<Folder[]>([]);
+  const [selectedPhraseFolder, setSelectedPhraseFolder] = useState<string | null>(null);
+  const [selectedImageFolder, setSelectedImageFolder] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [postingNow, setPostingNow] = useState<string | null>(null);
@@ -106,7 +118,7 @@ const PeriodicPosts = () => {
         navigate("/auth");
         return;
       }
-      await Promise.all([loadPosts(), loadAccounts(), loadPhrases(), loadImages(), loadCampaigns()]);
+      await Promise.all([loadPosts(), loadAccounts(), loadPhrases(), loadImages(), loadCampaigns(), loadPhraseFolders(), loadImageFolders()]);
     };
 
     checkAuth();
@@ -193,7 +205,7 @@ const PeriodicPosts = () => {
     try {
       const { data, error } = await supabase
         .from("phrases")
-        .select("id, content");
+        .select("id, content, folder_id");
 
       if (error) throw error;
       setPhrases(data || []);
@@ -206,12 +218,42 @@ const PeriodicPosts = () => {
     try {
       const { data, error } = await supabase
         .from("images")
-        .select("id, file_name, public_url, alt_text");
+        .select("id, file_name, public_url, alt_text, folder_id");
 
       if (error) throw error;
       setImages(data || []);
     } catch (error) {
       console.error("Error loading images:", error);
+    }
+  };
+
+  const loadPhraseFolders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("content_folders")
+        .select("*")
+        .eq("type", "phrase")
+        .order("name");
+
+      if (error) throw error;
+      setPhraseFolders(data || []);
+    } catch (error) {
+      console.error("Error loading phrase folders:", error);
+    }
+  };
+
+  const loadImageFolders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("content_folders")
+        .select("*")
+        .eq("type", "image")
+        .order("name");
+
+      if (error) throw error;
+      setImageFolders(data || []);
+    } catch (error) {
+      console.error("Error loading image folders:", error);
     }
   };
 
@@ -364,7 +406,17 @@ const PeriodicPosts = () => {
     setSelectedImage("");
     setCarouselImages([]);
     setUseIntelligentDelay(false);
+    setSelectedPhraseFolder(null);
+    setSelectedImageFolder(null);
   };
+
+  const filteredPhrases = selectedPhraseFolder === null 
+    ? phrases 
+    : phrases.filter(p => p.folder_id === selectedPhraseFolder);
+
+  const filteredImages = selectedImageFolder === null 
+    ? images 
+    : images.filter(img => img.folder_id === selectedImageFolder);
 
   const toggleCarouselImage = (imageId: string) => {
     setCarouselImages(prev => {
@@ -733,6 +785,24 @@ const PeriodicPosts = () => {
 
                           {!useRandomPhrase && (
                             <div className="space-y-3 animate-in fade-in-50 slide-in-from-top-3">
+                              <Label htmlFor="phraseFolder" className="text-sm font-medium flex items-center gap-2">
+                                <span>📁</span>
+                                Filtrar por pasta (opcional)
+                              </Label>
+                              <Select value={selectedPhraseFolder || "all"} onValueChange={(v) => setSelectedPhraseFolder(v === "all" ? null : v)}>
+                                <SelectTrigger className="h-10 border-border/60 hover:border-primary/50 transition-colors">
+                                  <SelectValue placeholder="Todas as frases" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">Todas as frases</SelectItem>
+                                  {phraseFolders.map((folder) => (
+                                    <SelectItem key={folder.id} value={folder.id}>
+                                      {folder.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
                               <Label htmlFor="phrase" className="text-sm font-medium flex items-center gap-2">
                                 <span>💭</span>
                                 Selecione uma frase
@@ -742,7 +812,7 @@ const PeriodicPosts = () => {
                                   <SelectValue placeholder="Escolha a frase que será postada" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {phrases.map((phrase) => (
+                                  {filteredPhrases.map((phrase) => (
                                     <SelectItem key={phrase.id} value={phrase.id}>
                                       <div className="max-w-md truncate">{phrase.content}</div>
                                     </SelectItem>
@@ -799,6 +869,24 @@ const PeriodicPosts = () => {
 
                                     {!useRandomPhrase && (
                                       <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">
+                                        <Label htmlFor="phraseFolderImage" className="text-sm font-medium flex items-center gap-2">
+                                          <span>📁</span>
+                                          Filtrar por pasta (opcional)
+                                        </Label>
+                                        <Select value={selectedPhraseFolder || "all"} onValueChange={(v) => setSelectedPhraseFolder(v === "all" ? null : v)}>
+                                          <SelectTrigger className="bg-background h-10 border-border/60 hover:border-primary/50 transition-colors">
+                                            <SelectValue placeholder="Todas as frases" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="all">Todas as frases</SelectItem>
+                                            {phraseFolders.map((folder) => (
+                                              <SelectItem key={folder.id} value={folder.id}>
+                                                {folder.name}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+
                                         <Label htmlFor="phrase" className="text-sm font-medium flex items-center gap-2">
                                           <span>💭</span>
                                           Selecione uma frase
@@ -808,7 +896,7 @@ const PeriodicPosts = () => {
                                             <SelectValue placeholder="Escolha a frase" />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            {phrases.map((phrase) => (
+                                            {filteredPhrases.map((phrase) => (
                                               <SelectItem key={phrase.id} value={phrase.id}>
                                                 <div className="max-w-md truncate">{phrase.content}</div>
                                               </SelectItem>
@@ -837,6 +925,24 @@ const PeriodicPosts = () => {
 
                                 {!useRandomImage && (
                                   <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">
+                                    <Label htmlFor="imageFolder" className="text-sm font-medium flex items-center gap-2">
+                                      <span>📁</span>
+                                      Filtrar por pasta (opcional)
+                                    </Label>
+                                    <Select value={selectedImageFolder || "all"} onValueChange={(v) => setSelectedImageFolder(v === "all" ? null : v)}>
+                                      <SelectTrigger className="h-10 border-border/60 hover:border-primary/50 transition-colors bg-background">
+                                        <SelectValue placeholder="Todas as imagens" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="all">Todas as imagens</SelectItem>
+                                        {imageFolders.map((folder) => (
+                                          <SelectItem key={folder.id} value={folder.id}>
+                                            {folder.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+
                                     <Label htmlFor="image" className="text-sm font-medium flex items-center gap-2">
                                       <span>🖼️</span>
                                       Selecione uma imagem
@@ -846,7 +952,7 @@ const PeriodicPosts = () => {
                                         <SelectValue placeholder="Escolha a imagem" />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        {images.map((image) => (
+                                        {filteredImages.map((image) => (
                                           <SelectItem key={image.id} value={image.id}>
                                             <div className="flex items-center gap-3">
                                               <img src={image.public_url} className="h-10 w-10 object-cover rounded-lg border-2 border-border" alt="" />
@@ -909,6 +1015,24 @@ const PeriodicPosts = () => {
 
                                     {!useRandomPhrase && (
                                       <div className="space-y-2.5 animate-in fade-in-50 slide-in-from-top-3">
+                                        <Label htmlFor="phraseFolderCarousel" className="text-sm font-medium flex items-center gap-2">
+                                          <span>📁</span>
+                                          Filtrar por pasta (opcional)
+                                        </Label>
+                                        <Select value={selectedPhraseFolder || "all"} onValueChange={(v) => setSelectedPhraseFolder(v === "all" ? null : v)}>
+                                          <SelectTrigger className="bg-background h-10 border-border/60 hover:border-primary/50 transition-colors">
+                                            <SelectValue placeholder="Todas as frases" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="all">Todas as frases</SelectItem>
+                                            {phraseFolders.map((folder) => (
+                                              <SelectItem key={folder.id} value={folder.id}>
+                                                {folder.name}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+
                                         <Label htmlFor="phraseCarousel" className="text-sm font-medium flex items-center gap-2">
                                           <span>💭</span>
                                           Selecione uma frase
@@ -918,7 +1042,7 @@ const PeriodicPosts = () => {
                                             <SelectValue placeholder="Escolha a frase" />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            {phrases.map((phrase) => (
+                                            {filteredPhrases.map((phrase) => (
                                               <SelectItem key={phrase.id} value={phrase.id}>
                                                 <div className="max-w-md truncate">{phrase.content}</div>
                                               </SelectItem>
@@ -944,8 +1068,29 @@ const PeriodicPosts = () => {
                                     </span>
                                   </div>
                                 </div>
+
+                                <div className="space-y-2.5">
+                                  <Label htmlFor="imageFolderCarousel" className="text-sm font-medium flex items-center gap-2">
+                                    <span>📁</span>
+                                    Filtrar por pasta (opcional)
+                                  </Label>
+                                  <Select value={selectedImageFolder || "all"} onValueChange={(v) => setSelectedImageFolder(v === "all" ? null : v)}>
+                                    <SelectTrigger className="h-10 border-border/60 hover:border-primary/50 transition-colors bg-background">
+                                      <SelectValue placeholder="Todas as imagens" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="all">Todas as imagens</SelectItem>
+                                      {imageFolders.map((folder) => (
+                                        <SelectItem key={folder.id} value={folder.id}>
+                                          {folder.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
                                 <div className="grid grid-cols-4 gap-3 max-h-72 overflow-y-auto p-4 border-2 border-dashed rounded-xl bg-background/50 backdrop-blur">
-                                  {images.map((image) => (
+                                  {filteredImages.map((image) => (
                                     <button
                                       type="button"
                                       key={image.id}
