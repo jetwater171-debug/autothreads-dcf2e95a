@@ -9,13 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Clock, CheckCircle, XCircle, Send, Loader2 } from "lucide-react";
+import { Plus, Trash2, Clock, CheckCircle, XCircle, Send, Loader2, AlertCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface PeriodicPost {
   id: string;
+  title: string;
   interval_minutes: number;
   use_random_phrase: boolean;
   use_intelligent_delay: boolean;
@@ -38,6 +40,8 @@ interface PeriodicPost {
   images?: {
     public_url: string;
   } | null;
+  has_missing_phrase?: boolean;
+  has_missing_images?: boolean;
 }
 
 interface Image {
@@ -68,6 +72,7 @@ const PeriodicPosts = () => {
   const [open, setOpen] = useState(false);
   const [postingNow, setPostingNow] = useState<string | null>(null);
   
+  const [title, setTitle] = useState("");
   const [selectedAccount, setSelectedAccount] = useState("");
   const [intervalMinutes, setIntervalMinutes] = useState("10");
   const [postType, setPostType] = useState<'text' | 'image' | 'carousel'>('text');
@@ -107,7 +112,49 @@ const PeriodicPosts = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+      
+      // Validar se frases e imagens ainda existem
+      const validatedPosts = await Promise.all((data || []).map(async (post) => {
+        let has_missing_phrase = false;
+        let has_missing_images = false;
+
+        // Verificar frase específica
+        if (post.specific_phrase_id && !post.use_random_phrase) {
+          const { data: phrase } = await supabase
+            .from("phrases")
+            .select("id")
+            .eq("id", post.specific_phrase_id)
+            .single();
+          has_missing_phrase = !phrase;
+        }
+
+        // Verificar imagem específica
+        if (post.post_type === 'image' && post.specific_image_id && !post.use_random_image) {
+          const { data: image } = await supabase
+            .from("images")
+            .select("id")
+            .eq("id", post.specific_image_id)
+            .single();
+          has_missing_images = !image;
+        }
+
+        // Verificar imagens do carrossel
+        if (post.post_type === 'carousel' && post.carousel_image_ids && post.carousel_image_ids.length > 0) {
+          const { data: carouselImgs } = await supabase
+            .from("images")
+            .select("id")
+            .in("id", post.carousel_image_ids);
+          has_missing_images = !carouselImgs || carouselImgs.length !== post.carousel_image_ids.length;
+        }
+
+        return {
+          ...post,
+          has_missing_phrase,
+          has_missing_images,
+        };
+      }));
+
+      setPosts(validatedPosts);
     } catch (error) {
       console.error("Error loading posts:", error);
     } finally {
@@ -159,6 +206,14 @@ const PeriodicPosts = () => {
     e.preventDefault();
 
     // Validações
+    if (!title.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Digite um nome para a automação",
+      });
+      return;
+    }
+
     if (postType === 'text' && !selectedPhrase && !useRandomPhrase) {
       toast({
         variant: "destructive",
@@ -189,6 +244,7 @@ const PeriodicPosts = () => {
 
       const { error } = await supabase.from("periodic_posts").insert({
         user_id: user.id,
+        title: title.trim(),
         account_id: selectedAccount,
         interval_minutes: parseInt(intervalMinutes),
         post_type: postType,
@@ -268,6 +324,7 @@ const PeriodicPosts = () => {
   };
 
   const resetForm = () => {
+    setTitle("");
     setSelectedAccount("");
     setIntervalMinutes("10");
     setPostType('text');
@@ -401,6 +458,24 @@ const PeriodicPosts = () => {
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-8 pt-2">
+                {/* Nome da Automação */}
+                <div className="space-y-3">
+                  <Label htmlFor="title" className="text-sm font-medium flex items-center gap-2">
+                    <span className="text-base">✏️</span>
+                    Nome da Automação
+                  </Label>
+                  <Input
+                    id="title"
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                    maxLength={100}
+                    className="h-12 border-border/60 hover:border-primary/50 transition-colors text-base"
+                    placeholder="Ex: Frases motivacionais da manhã"
+                  />
+                </div>
+
                 {/* Configurações Básicas */}
                 <div className="space-y-5">
                   <div className="flex items-center gap-3">
@@ -890,18 +965,40 @@ const PeriodicPosts = () => {
             <Card key={post.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      {post.threads_accounts.username || post.threads_accounts.account_id}
+                  <div className="space-y-2 flex-1">
+                    <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
+                      {post.title}
                       {post.is_active ? (
                         <CheckCircle className="h-4 w-4 text-success" />
                       ) : (
                         <XCircle className="h-4 w-4 text-destructive" />
                       )}
+                      {post.has_missing_phrase && (
+                        <Badge variant="destructive" className="gap-1 text-xs">
+                          <AlertCircle className="h-3 w-3" />
+                          Frase removida
+                        </Badge>
+                      )}
+                      {post.has_missing_images && (
+                        <Badge variant="destructive" className="gap-1 text-xs">
+                          <AlertCircle className="h-3 w-3" />
+                          Imagem removida
+                        </Badge>
+                      )}
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <Clock className="h-3 w-3" />
-                      A cada {post.interval_minutes} minutos
+                    <CardDescription className="flex items-center gap-2 flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        A cada {post.interval_minutes} minutos
+                      </span>
+                      <span className="text-muted-foreground/60">•</span>
+                      <span>{post.threads_accounts.username || post.threads_accounts.account_id}</span>
+                      <span className="text-muted-foreground/60">•</span>
+                      <span className="capitalize">
+                        {post.post_type === 'text' ? '📝 Texto' : 
+                         post.post_type === 'image' ? '🖼️ Imagem' : 
+                         '🎠 Carrossel'}
+                      </span>
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">

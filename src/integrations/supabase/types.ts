@@ -115,6 +115,7 @@ export type Database = {
           post_type: string | null
           specific_image_id: string | null
           specific_phrase_id: string | null
+          title: string
           updated_at: string | null
           use_intelligent_delay: boolean | null
           use_random_image: boolean | null
@@ -132,6 +133,7 @@ export type Database = {
           post_type?: string | null
           specific_image_id?: string | null
           specific_phrase_id?: string | null
+          title?: string
           updated_at?: string | null
           use_intelligent_delay?: boolean | null
           use_random_image?: boolean | null
@@ -149,6 +151,7 @@ export type Database = {
           post_type?: string | null
           specific_image_id?: string | null
           specific_phrase_id?: string | null
+          title?: string
           updated_at?: string | null
           use_intelligent_delay?: boolean | null
           use_random_image?: boolean | null
