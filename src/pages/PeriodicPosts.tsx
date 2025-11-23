@@ -93,8 +93,21 @@ const PeriodicPosts = () => {
   const [open, setOpen] = useState(false);
   const [postingNow, setPostingNow] = useState<string | null>(null);
   
+  // Estado para salvar dados temporários do wizard
+  const [wizardDraftData, setWizardDraftData] = useState<Partial<WizardData> | null>(null);
+  const [wizardDraftStep, setWizardDraftStep] = useState<number>(1);
+  const [shouldReopenWizard, setShouldReopenWizard] = useState(false);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Detectar quando voltar de outra página e reabrir o wizard
+  useEffect(() => {
+    if (shouldReopenWizard && wizardDraftData) {
+      setOpen(true);
+      setShouldReopenWizard(false);
+    }
+  }, [shouldReopenWizard, wizardDraftData]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -300,6 +313,8 @@ const PeriodicPosts = () => {
       });
 
       setOpen(false);
+      setWizardDraftData(null);
+      setWizardDraftStep(1);
       loadPosts();
     } catch (error: any) {
       toast({
@@ -309,6 +324,33 @@ const PeriodicPosts = () => {
       });
       throw error;
     }
+  };
+
+  const handleNavigateToAddContent = (
+    type: 'phrases' | 'images' | 'campaigns',
+    currentData: WizardData,
+    currentStep: number
+  ) => {
+    // Salvar dados temporários do wizard
+    setWizardDraftData(currentData);
+    setWizardDraftStep(currentStep);
+    
+    // Fechar o wizard temporariamente
+    setOpen(false);
+    
+    // Navegar para a página correspondente
+    const routes = {
+      phrases: '/phrases',
+      images: '/images',
+      campaigns: '/campaigns',
+    };
+    
+    navigate(routes[type]);
+    
+    // Marcar para reabrir quando voltar
+    setTimeout(() => {
+      setShouldReopenWizard(true);
+    }, 500);
   };
 
   const handleDelete = async (id: string) => {
@@ -468,7 +510,14 @@ const PeriodicPosts = () => {
                 phraseFolders={phraseFolders}
                 imageFolders={imageFolders}
                 onSubmit={handleWizardSubmit}
-                onCancel={() => setOpen(false)}
+                onCancel={() => {
+                  setOpen(false);
+                  setWizardDraftData(null);
+                  setWizardDraftStep(1);
+                }}
+                initialData={wizardDraftData || undefined}
+                initialStep={wizardDraftStep}
+                onNavigateToAddContent={handleNavigateToAddContent}
               />
             </DialogContent>
           </Dialog>
