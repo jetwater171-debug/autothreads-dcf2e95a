@@ -70,43 +70,88 @@ export type Database = {
           },
         ]
       }
+      images: {
+        Row: {
+          alt_text: string | null
+          created_at: string | null
+          file_name: string
+          file_path: string
+          id: string
+          public_url: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          public_url: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          public_url?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       periodic_posts: {
         Row: {
           account_id: string
+          carousel_image_ids: string[] | null
           created_at: string | null
           id: string
           interval_minutes: number
           is_active: boolean | null
           last_posted_at: string | null
+          post_type: string | null
+          specific_image_id: string | null
           specific_phrase_id: string | null
           updated_at: string | null
           use_intelligent_delay: boolean | null
+          use_random_image: boolean | null
           use_random_phrase: boolean | null
           user_id: string
         }
         Insert: {
           account_id: string
+          carousel_image_ids?: string[] | null
           created_at?: string | null
           id?: string
           interval_minutes: number
           is_active?: boolean | null
           last_posted_at?: string | null
+          post_type?: string | null
+          specific_image_id?: string | null
           specific_phrase_id?: string | null
           updated_at?: string | null
           use_intelligent_delay?: boolean | null
+          use_random_image?: boolean | null
           use_random_phrase?: boolean | null
           user_id: string
         }
         Update: {
           account_id?: string
+          carousel_image_ids?: string[] | null
           created_at?: string | null
           id?: string
           interval_minutes?: number
           is_active?: boolean | null
           last_posted_at?: string | null
+          post_type?: string | null
+          specific_image_id?: string | null
           specific_phrase_id?: string | null
           updated_at?: string | null
           use_intelligent_delay?: boolean | null
+          use_random_image?: boolean | null
           use_random_phrase?: boolean | null
           user_id?: string
         }
@@ -116,6 +161,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "threads_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodic_posts_specific_image_id_fkey"
+            columns: ["specific_image_id"]
+            isOneToOne: false
+            referencedRelation: "images"
             referencedColumns: ["id"]
           },
           {
@@ -157,7 +209,9 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_urls: string[] | null
           phrase_id: string | null
+          post_type: string | null
           posted_at: string
           threads_post_id: string | null
           user_id: string
@@ -167,7 +221,9 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          image_urls?: string[] | null
           phrase_id?: string | null
+          post_type?: string | null
           posted_at?: string
           threads_post_id?: string | null
           user_id: string
@@ -177,7 +233,9 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          image_urls?: string[] | null
           phrase_id?: string | null
+          post_type?: string | null
           posted_at?: string
           threads_post_id?: string | null
           user_id?: string

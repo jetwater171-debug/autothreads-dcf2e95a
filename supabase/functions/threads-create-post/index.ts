@@ -13,10 +13,23 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { accountId, text } = await req.json();
+    const { accountId, text, imageUrls, postType } = await req.json();
 
-    if (!accountId || !text) {
-      throw new Error('accountId e text são obrigatórios');
+    if (!accountId) {
+      throw new Error('accountId é obrigatório');
+    }
+
+    // Validações baseadas no tipo de post
+    if (postType === 'text' && !text) {
+      throw new Error('Texto é obrigatório para posts de texto');
+    }
+
+    if (postType === 'image' && (!imageUrls || imageUrls.length === 0)) {
+      throw new Error('Imagem é obrigatória para posts de imagem');
+    }
+
+    if (postType === 'carousel' && (!imageUrls || imageUrls.length < 2 || imageUrls.length > 10)) {
+      throw new Error('Carrossel requer entre 2 e 10 imagens');
     }
 
     // Obter usuário autenticado
@@ -55,19 +68,55 @@ Deno.serve(async (req) => {
       throw new Error('Conta não encontrada');
     }
 
-    console.log('Criando post no Threads...');
+    console.log(`Criando post tipo ${postType || 'text'} no Threads...`);
 
-    // Criar o post (container)
-    const createResponse = await fetch(
-      `https://graph.threads.net/v1.0/${account.account_id}/threads?` +
-      `access_token=${account.access_token}` +
-      `&domain=THREADS` +
-      `&media_type=TEXT` +
-      `&text=${encodeURIComponent(text)}`,
-      {
-        method: 'POST',
+    let createUrl = `https://graph.threads.net/v1.0/${account.account_id}/threads?access_token=${account.access_token}&domain=THREADS`;
+    let creationId: string;
+
+    // Construir request baseado no tipo de post
+    if (postType === 'carousel') {
+      // Criar containers individuais para cada imagem
+      const childrenIds: string[] = [];
+
+      for (const imageUrl of imageUrls) {
+        const childResponse = await fetch(
+          `https://graph.threads.net/v1.0/${account.account_id}/threads?` +
+          `access_token=${account.access_token}` +
+          `&domain=THREADS` +
+          `&media_type=IMAGE` +
+          `&image_url=${encodeURIComponent(imageUrl)}` +
+          `&is_carousel_item=true`,
+          { method: 'POST' }
+        );
+
+        if (!childResponse.ok) {
+          const errorText = await childResponse.text();
+          console.error('Erro ao criar item do carrossel:', errorText);
+          throw new Error(`Erro ao criar item do carrossel: ${errorText}`);
+        }
+
+        const childData = await childResponse.json();
+        childrenIds.push(childData.id);
       }
-    );
+
+      // Criar container do carrossel com os children
+      createUrl += `&media_type=CAROUSEL&children=${childrenIds.join(',')}`;
+      if (text) {
+        createUrl += `&text=${encodeURIComponent(text)}`;
+      }
+    } else if (postType === 'image') {
+      // Post com 1 imagem + texto opcional
+      createUrl += `&media_type=IMAGE&image_url=${encodeURIComponent(imageUrls[0])}`;
+      if (text) {
+        createUrl += `&text=${encodeURIComponent(text)}`;
+      }
+    } else {
+      // Post apenas com texto (default)
+      createUrl += `&media_type=TEXT&text=${encodeURIComponent(text)}`;
+    }
+
+    // Criar container
+    const createResponse = await fetch(createUrl, { method: 'POST' });
 
     if (!createResponse.ok) {
       const errorText = await createResponse.text();
@@ -76,14 +125,14 @@ Deno.serve(async (req) => {
     }
 
     const createData = await createResponse.json();
-    const creationId = createData.id;
+    creationId = createData.id;
 
     console.log('Post criado com ID:', creationId);
     console.log('Aguardando 3 segundos para processar container...');
-    
+
     // Delay de 3 segundos para a API processar o container
     await sleep(3000);
-    
+
     console.log('Publicando post...');
 
     // Publicar o post
@@ -91,9 +140,7 @@ Deno.serve(async (req) => {
       `https://graph.threads.net/v1.0/${account.account_id}/threads_publish?` +
       `access_token=${account.access_token}` +
       `&creation_id=${creationId}`,
-      {
-        method: 'POST',
-      }
+      { method: 'POST' }
     );
 
     if (!publishResponse.ok) {
