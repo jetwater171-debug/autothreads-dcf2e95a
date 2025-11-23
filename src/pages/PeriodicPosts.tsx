@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Trash2, Clock, CheckCircle, XCircle, Send, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +24,9 @@ interface PeriodicPost {
   post_type: string;
   use_random_image: boolean;
   specific_image_id: string | null;
+  specific_phrase_id: string | null;
   carousel_image_ids: string[] | null;
+  account_id: string;
   threads_accounts: {
     username: string | null;
     account_id: string;
@@ -64,6 +66,7 @@ const PeriodicPosts = () => {
   const [images, setImages] = useState<Image[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [postingNow, setPostingNow] = useState<string | null>(null);
   
   const [selectedAccount, setSelectedAccount] = useState("");
   const [intervalMinutes, setIntervalMinutes] = useState("10");
@@ -292,6 +295,82 @@ const PeriodicPosts = () => {
         return [...prev, imageId];
       }
     });
+  };
+
+  const handlePostNow = async (post: PeriodicPost) => {
+    setPostingNow(post.id);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Não autenticado");
+
+      // Buscar frase se necessário
+      let phraseContent = "";
+      if (post.post_type === 'text' || (post.post_type !== 'text' && post.specific_phrase_id)) {
+        if (post.use_random_phrase) {
+          const { data: randomPhrase } = await supabase
+            .from("phrases")
+            .select("content")
+            .limit(1)
+            .single();
+          if (randomPhrase) phraseContent = randomPhrase.content;
+        } else if (post.phrases) {
+          phraseContent = post.phrases.content;
+        }
+      }
+
+      // Buscar imagens se necessário
+      let imageUrls: string[] = [];
+      if (post.post_type === 'image') {
+        if (post.use_random_image) {
+          const { data: randomImage } = await supabase
+            .from("images")
+            .select("public_url")
+            .limit(1)
+            .single();
+          if (randomImage) imageUrls = [randomImage.public_url];
+        } else if (post.specific_image_id) {
+          const { data: image } = await supabase
+            .from("images")
+            .select("public_url")
+            .eq("id", post.specific_image_id)
+            .single();
+          if (image) imageUrls = [image.public_url];
+        }
+      } else if (post.post_type === 'carousel' && post.carousel_image_ids) {
+        const { data: carouselImgs } = await supabase
+          .from("images")
+          .select("public_url")
+          .in("id", post.carousel_image_ids);
+        if (carouselImgs) imageUrls = carouselImgs.map(img => img.public_url);
+      }
+
+      // Chamar edge function para criar o post
+      const { data, error } = await supabase.functions.invoke("threads-create-post", {
+        body: {
+          accountId: post.account_id,
+          text: phraseContent || undefined,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+          postType: post.post_type,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Post enviado com sucesso!",
+        description: "O post foi publicado imediatamente no Threads.",
+      });
+    } catch (error: any) {
+      console.error("Erro ao postar agora:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao postar",
+        description: error.message || "Não foi possível publicar o post.",
+      });
+    } finally {
+      setPostingNow(null);
+    }
   };
 
   return (
@@ -826,6 +905,25 @@ const PeriodicPosts = () => {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handlePostNow(post)}
+                      disabled={postingNow === post.id}
+                      className="gap-2"
+                    >
+                      {postingNow === post.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Postando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          Postar Agora
+                        </>
+                      )}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
