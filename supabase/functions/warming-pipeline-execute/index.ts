@@ -134,8 +134,8 @@ Deno.serve(async (req) => {
           let imageUrl = null;
           let imageUrls: string[] = [];
 
-          // Buscar frase se necessário
-          if (["text", "text_image"].includes(post.post_type)) {
+          // Buscar frase se necessário (text, text_image ou carousel com texto)
+          if (["text", "text_image", "carousel"].includes(post.post_type)) {
             if (post.text_mode === "custom" && post.custom_text) {
               phraseContent = post.custom_text;
             } else if (post.text_mode === "specific" && post.specific_phrase_id) {
@@ -202,10 +202,10 @@ Deno.serve(async (req) => {
           const { error: postError } = await supabase.functions.invoke("threads-create-post", {
             body: {
               accountId: warmingAccount.account_id,
-              content: phraseContent || "",
-              imageUrl: imageUrl,
-              imageUrls: post.post_type === "carousel" ? imageUrls : undefined,
+              text: phraseContent || "",
+              imageUrls: post.post_type === "carousel" ? imageUrls : (imageUrl ? [imageUrl] : undefined),
               postType: post.post_type,
+              userId: warmingAccount.warming_pipelines.user_id,
             },
           });
 
