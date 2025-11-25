@@ -43,7 +43,7 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
 
       if (sequencesError) throw sequencesError;
 
-      // Load runs count for each sequence
+      // Load runs count and active runs for each sequence
       const pipelinesWithCounts = await Promise.all(
         (sequences || []).map(async (seq: any) => {
           const { count } = await (supabase as any)
@@ -51,9 +51,17 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
             .select('*', { count: 'exact', head: true })
             .eq('sequence_id', seq.id);
 
+          // Check if there are any running executions
+          const { data: runningRuns } = await (supabase as any)
+            .from('warmup_runs')
+            .select('id')
+            .eq('sequence_id', seq.id)
+            .eq('status', 'running');
+
           return {
             ...seq,
             warmup_runs: Array(count || 0).fill(null), // Mock array for length
+            has_active_runs: runningRuns && runningRuns.length > 0,
           };
         })
       );
@@ -162,7 +170,7 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
 
   const getStatusBadge = (status: string) => {
     const variants: any = {
-      active: { variant: "default", label: "Ativa", className: "bg-primary/10 text-primary border-primary/20 animate-pulse" },
+      active: { variant: "default", label: "Ativa", className: "bg-primary/10 text-primary border-primary/20" },
       archived: { variant: "secondary", label: "Arquivada", className: "" },
     };
 
@@ -220,7 +228,7 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
         {pipelines.map((pipeline) => {
           const accountsCount = Array.isArray(pipeline.warmup_runs) ? pipeline.warmup_runs.length : 0;
           const progress = calculateProgress(pipeline);
-          const hasActiveRuns = pipeline.status === 'active' && accountsCount > 0;
+          const hasActiveRuns = pipeline.has_active_runs === true;
 
           return (
             <Card 
@@ -229,7 +237,7 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
             >
               {/* Gradient overlay for active pipelines */}
               {hasActiveRuns && (
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-br from-success/5 to-transparent pointer-events-none" />
               )}
               
               <CardHeader className="space-y-4 relative">
@@ -245,10 +253,10 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
                         </CardTitle>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {getStatusBadge(pipeline.status)}
                       {hasActiveRuns && (
-                        <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                        <Badge variant="outline" className="bg-success/10 text-success border-success/20 animate-pulse">
                           <Activity className="h-3 w-3 mr-1" />
                           Em execução
                         </Badge>
