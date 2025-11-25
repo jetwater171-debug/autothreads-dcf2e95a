@@ -126,7 +126,9 @@ Deno.serve(async (req) => {
 
           // Buscar frase se necessário
           if (["text", "text_image"].includes(post.post_type)) {
-            if (post.text_mode === "specific" && post.specific_phrase_id) {
+            if (post.text_mode === "custom" && post.custom_text) {
+              phraseContent = post.custom_text;
+            } else if (post.text_mode === "specific" && post.specific_phrase_id) {
               const { data: phrase } = await supabase
                 .from("phrases")
                 .select("content")

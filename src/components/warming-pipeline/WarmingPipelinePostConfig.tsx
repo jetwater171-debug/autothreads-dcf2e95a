@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { PostConfig } from "../WarmingPipelineWizard";
 import { supabase } from "@/integrations/supabase/client";
 import { Clock, Zap } from "lucide-react";
@@ -91,16 +92,26 @@ export const WarmingPipelinePostConfig = ({ post, onUpdate }: WarmingPipelinePos
       {needsText && (
         <div className="space-y-3 p-3 rounded-lg border">
           <Label>Configuração de Texto</Label>
-          <Select value={post.textMode} onValueChange={(value) => handleFieldChange("textMode", value)}>
+          <Select value={post.textMode || "custom"} onValueChange={(value) => handleFieldChange("textMode", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="custom">Escrever texto</SelectItem>
               <SelectItem value="specific">Frase específica</SelectItem>
               <SelectItem value="random">Frase aleatória</SelectItem>
               <SelectItem value="random_folder">Pasta de frases</SelectItem>
             </SelectContent>
           </Select>
+
+          {post.textMode === "custom" && (
+            <Textarea
+              placeholder="Digite o texto para este post..."
+              value={post.customText || ""}
+              onChange={(e) => handleFieldChange("customText", e.target.value)}
+              className="min-h-[100px]"
+            />
+          )}
 
           {post.textMode === "specific" && (
             <Select value={post.specificPhraseId} onValueChange={(value) => handleFieldChange("specificPhraseId", value)}>

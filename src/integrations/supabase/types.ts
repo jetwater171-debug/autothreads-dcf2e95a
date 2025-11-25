@@ -509,6 +509,7 @@ export type Database = {
         Row: {
           carousel_image_ids: string[] | null
           created_at: string
+          custom_text: string | null
           day_id: string
           id: string
           image_mode: string | null
@@ -525,6 +526,7 @@ export type Database = {
         Insert: {
           carousel_image_ids?: string[] | null
           created_at?: string
+          custom_text?: string | null
           day_id: string
           id?: string
           image_mode?: string | null
@@ -541,6 +543,7 @@ export type Database = {
         Update: {
           carousel_image_ids?: string[] | null
           created_at?: string
+          custom_text?: string | null
           day_id?: string
           id?: string
           image_mode?: string | null

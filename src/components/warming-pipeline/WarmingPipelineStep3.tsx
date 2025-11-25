@@ -59,6 +59,7 @@ export const WarmingPipelineStep3 = ({ data, onBack, onComplete }: WarmingPipeli
             use_intelligent_delay: post.useIntelligentDelay,
             post_type: post.postType,
             text_mode: post.textMode,
+            custom_text: post.customText,
             specific_phrase_id: post.specificPhraseId,
             random_phrase_folder_id: post.randomPhraseFolderId,
             image_mode: post.imageMode,
