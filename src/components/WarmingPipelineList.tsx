@@ -32,19 +32,31 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await (supabase as any)
+      // Load sequences
+      const { data: sequences, error: sequencesError } = await (supabase as any)
         .from('warmup_sequences')
-        .select(`
-          *,
-          warmup_days(count),
-          warmup_runs(count)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (sequencesError) throw sequencesError;
 
-      setPipelines(data || []);
+      // Load runs count for each sequence
+      const pipelinesWithCounts = await Promise.all(
+        (sequences || []).map(async (seq: any) => {
+          const { count } = await (supabase as any)
+            .from('warmup_runs')
+            .select('*', { count: 'exact', head: true })
+            .eq('sequence_id', seq.id);
+
+          return {
+            ...seq,
+            warmup_runs: Array(count || 0).fill(null), // Mock array for length
+          };
+        })
+      );
+
+      setPipelines(pipelinesWithCounts);
     } catch (error) {
       console.error('Error loading pipelines:', error);
       toast.error("Erro ao carregar esteiras de aquecimento");
