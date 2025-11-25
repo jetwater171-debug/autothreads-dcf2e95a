@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface WarmingStatus {
   status: "warmed" | "warming" | "not_warmed";
   daysRemaining?: number;
-  pipelineId?: string;
+  runId?: string;
 }
 
 export function useAccountWarmingStatus(accountIds: string[]) {
@@ -19,43 +19,48 @@ export function useAccountWarmingStatus(accountIds: string[]) {
 
     const fetchStatuses = async () => {
       try {
-        // Buscar status de warming para cada conta
-        const { data: warmingData, error } = await supabase
-          .from("warming_pipeline_accounts")
-          .select(`
-            account_id,
-            status,
-            current_day,
-            pipeline_id,
-            warming_pipelines!inner(total_days)
-          `)
-          .in("account_id", accountIds)
-          .in("status", ["warming", "completed"]);
+        // Check threads_accounts for warmup_status
+        const { data: accounts, error } = await (supabase as any)
+          .from('threads_accounts')
+          .select('id, warmup_status, active_warmup_run_id')
+          .in('id', accountIds);
 
         if (error) throw error;
 
         const newStatuses: Record<string, WarmingStatus> = {};
 
-        // Inicializar todos como "não aquecido"
+        // Initialize all as "not_warmed"
         accountIds.forEach(id => {
           newStatuses[id] = { status: "not_warmed" };
         });
 
-        // Atualizar com dados reais
-        warmingData?.forEach((item: any) => {
-          if (item.status === "warming") {
-            const daysRemaining = item.warming_pipelines.total_days - item.current_day + 1;
-            newStatuses[item.account_id] = {
-              status: "warming",
-              daysRemaining,
-              pipelineId: item.pipeline_id,
-            };
-          } else if (item.status === "completed") {
-            newStatuses[item.account_id] = {
+        // Update with real data
+        for (const account of accounts || []) {
+          if (account.warmup_status === 'warming' && account.active_warmup_run_id) {
+            // Get run details to calculate days remaining
+            const { data: run } = await (supabase as any)
+              .from('warmup_runs')
+              .select(`
+                *,
+                warmup_sequences!inner(total_days)
+              `)
+              .eq('id', account.active_warmup_run_id)
+              .single();
+
+            if (run) {
+              const daysRemaining = (run.warmup_sequences as any).total_days - (run.current_day_index || 1) + 1;
+              newStatuses[account.id] = {
+                status: "warming",
+                daysRemaining,
+                runId: account.active_warmup_run_id,
+              };
+            }
+          } else if (account.warmup_status === 'warmed') {
+            newStatuses[account.id] = {
               status: "warmed",
             };
           }
-        });
+        }
 
         setStatuses(newStatuses);
       } catch (error) {
