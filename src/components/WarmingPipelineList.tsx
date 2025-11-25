@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Settings, Trash2, Users, Flame } from "lucide-react";
 import { toast } from "sonner";
+import { WarmingPipelineManageDialog } from "./warming-pipeline/WarmingPipelineManageDialog";
+import { WarmingPipelineAccountsDialog } from "./warming-pipeline/WarmingPipelineAccountsDialog";
 
 interface WarmingPipelineListProps {
   onRefresh?: () => void;
@@ -13,6 +16,9 @@ interface WarmingPipelineListProps {
 export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}) => {
   const [pipelines, setPipelines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPipeline, setSelectedPipeline] = useState<string | null>(null);
+  const [manageDialogOpen, setManageDialogOpen] = useState(false);
+  const [accountsDialogOpen, setAccountsDialogOpen] = useState(false);
 
   useEffect(() => {
     loadPipelines();
@@ -101,68 +107,95 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {pipelines.map((pipeline) => {
-        const totalDays = pipeline.warming_pipeline_days?.[0]?.count || 0;
-        const accountsCount = pipeline.warming_pipeline_accounts?.[0]?.count || 0;
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {pipelines.map((pipeline) => {
+          const totalDays = pipeline.warming_pipeline_days?.[0]?.count || 0;
+          const accountsCount = pipeline.warming_pipeline_accounts?.[0]?.count || 0;
 
-        return (
-          <Card key={pipeline.id} className="p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500/10 to-red-500/10">
-                  <Flame className="h-5 w-5 text-orange-500" />
+          return (
+            <Card key={pipeline.id} className="p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500/10 to-red-500/10">
+                    <Flame className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{pipeline.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {pipeline.total_days} dias • {accountsCount} conta(s)
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">{pipeline.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {pipeline.total_days} dias • {accountsCount} conta(s)
-                  </p>
-                </div>
+                {getStatusBadge(pipeline.status)}
               </div>
-              {getStatusBadge(pipeline.status)}
-            </div>
 
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 gap-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.location.href = `/warming-pipeline/${pipeline.id}`;
-                }}
-              >
-                <Settings className="h-4 w-4" />
-                Gerenciar
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 gap-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.location.href = `/warming-pipeline/${pipeline.id}/accounts`;
-                }}
-              >
-                <Users className="h-4 w-4" />
-                Contas
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(pipeline.id);
-                }}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-        );
-      })}
-    </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPipeline(pipeline.id);
+                    setManageDialogOpen(true);
+                  }}
+                >
+                  <Settings className="h-4 w-4" />
+                  Gerenciar
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPipeline(pipeline.id);
+                    setAccountsDialogOpen(true);
+                  }}
+                >
+                  <Users className="h-4 w-4" />
+                  Contas
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(pipeline.id);
+                  }}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {selectedPipeline && (
+        <>
+          <WarmingPipelineManageDialog
+            open={manageDialogOpen}
+            onOpenChange={setManageDialogOpen}
+            pipelineId={selectedPipeline}
+            onManageAccounts={() => {
+              setManageDialogOpen(false);
+              setAccountsDialogOpen(true);
+            }}
+          />
+          <WarmingPipelineAccountsDialog
+            open={accountsDialogOpen}
+            onOpenChange={setAccountsDialogOpen}
+            pipelineId={selectedPipeline}
+            pipelineName={pipelines.find(p => p.id === selectedPipeline)?.name || ""}
+            onSuccess={() => {
+              loadPipelines();
+            }}
+          />
+        </>
+      )}
+    </>
   );
 };
