@@ -20,7 +20,8 @@ export interface PostConfig {
   scheduledTime: string;
   useIntelligentDelay: boolean;
   postType: "text" | "image" | "text_image" | "carousel";
-  textMode?: "specific" | "random" | "random_folder";
+  textMode?: "custom" | "specific" | "random" | "random_folder";
+  customText?: string;
   specificPhraseId?: string;
   randomPhraseFolderId?: string;
   imageMode?: "specific" | "random" | "random_folder";
