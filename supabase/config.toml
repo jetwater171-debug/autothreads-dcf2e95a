@@ -1,1 +1,4 @@
 project_id = "dkujfrtexoskmgceewfv"
+
+[functions.warming-pipeline-execute]
+verify_jwt = false
