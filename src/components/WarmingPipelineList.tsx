@@ -78,26 +78,32 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
       if (runs && runs.length > 0) {
         const runIds = runs.map((r: any) => r.id);
 
-        // 2. Delete paused automations
+        // 2. Clear active_warmup_run_id from threads_accounts
+        await (supabase as any)
+          .from('threads_accounts')
+          .update({ active_warmup_run_id: null, warmup_status: 'not_warmed' })
+          .in('active_warmup_run_id', runIds);
+
+        // 3. Delete paused automations
         await (supabase as any)
           .from('warmup_paused_automations')
           .delete()
           .in('run_id', runIds);
 
-        // 3. Delete scheduled posts
+        // 4. Delete scheduled posts
         await (supabase as any)
           .from('warmup_scheduled_posts')
           .delete()
           .in('run_id', runIds);
 
-        // 4. Delete runs
+        // 5. Delete runs
         await (supabase as any)
           .from('warmup_runs')
           .delete()
           .in('id', runIds);
       }
 
-      // 5. Get all days for this sequence
+      // 6. Get all days for this sequence
       const { data: days } = await (supabase as any)
         .from('warmup_days')
         .select('id')
@@ -106,7 +112,7 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
       if (days && days.length > 0) {
         const dayIds = days.map((d: any) => d.id);
 
-        // 6. Get all day posts
+        // 7. Get all day posts
         const { data: dayPosts } = await (supabase as any)
           .from('warmup_day_posts')
           .select('id')
@@ -115,27 +121,27 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
         if (dayPosts && dayPosts.length > 0) {
           const dayPostIds = dayPosts.map((p: any) => p.id);
 
-          // 7. Delete carousel images
+          // 8. Delete carousel images
           await (supabase as any)
             .from('warmup_day_post_carousel_images')
             .delete()
             .in('day_post_id', dayPostIds);
 
-          // 8. Delete day posts
+          // 9. Delete day posts
           await (supabase as any)
             .from('warmup_day_posts')
             .delete()
             .in('id', dayPostIds);
         }
 
-        // 9. Delete days
+        // 10. Delete days
         await (supabase as any)
           .from('warmup_days')
           .delete()
           .in('id', dayIds);
       }
 
-      // 10. Finally delete the sequence
+      // 11. Finally delete the sequence
       const { error } = await (supabase as any)
         .from('warmup_sequences')
         .delete()
