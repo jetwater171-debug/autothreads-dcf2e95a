@@ -34,11 +34,16 @@ Deno.serve(async (req) => {
     // Fetch sequence with days
     const { data: sequence, error: sequenceError } = await supabase
       .from('warmup_sequences')
-      .select('*, warmup_days(*, warmup_day_posts(*), warmup_day_post_carousel_images(*))')
+      .select('*, warmup_days(*, warmup_day_posts(*, warmup_day_post_carousel_images(*)))')
       .eq('id', sequenceId)
       .single();
 
-    if (sequenceError || !sequence) {
+    if (sequenceError) {
+      console.error('❌ Erro ao buscar sequência:', sequenceError);
+      throw new Error(`Sequência não encontrada: ${sequenceError.message}`);
+    }
+
+    if (!sequence) {
       throw new Error('Sequência não encontrada');
     }
 
