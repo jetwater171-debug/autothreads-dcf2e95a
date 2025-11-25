@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,16 +13,12 @@ interface WarmingPipelineAccountsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pipelineId: string;
-  pipelineName: string;
-  onSuccess?: () => void;
 }
 
 export const WarmingPipelineAccountsDialog = ({ 
   open, 
   onOpenChange, 
   pipelineId,
-  pipelineName,
-  onSuccess 
 }: WarmingPipelineAccountsDialogProps) => {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -45,17 +41,18 @@ export const WarmingPipelineAccountsDialog = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Carregar contas e dados linkados em paralelo para melhor performance
+      // Load accounts and linked runs in parallel
       const [accountsResult, linkedResult] = await Promise.all([
-        supabase
+        (supabase as any)
           .from("threads_accounts")
           .select("id, username, profile_picture_url, account_id")
           .eq("user_id", user.id)
           .eq("is_active", true),
-        supabase
-          .from("warming_pipeline_accounts")
+        (supabase as any)
+          .from("warmup_runs")
           .select("account_id")
-          .eq("pipeline_id", pipelineId)
+          .eq("sequence_id", pipelineId)
+          .in("status", ["running", "scheduled"])
       ]);
 
       if (accountsResult.error) throw accountsResult.error;
@@ -79,7 +76,7 @@ export const WarmingPipelineAccountsDialog = ({
     const status = statuses[accountId];
     
     if (status?.status === "warming" && !linkedAccounts.includes(accountId)) {
-      toast.error("Esta conta está em aquecimento em outra esteira");
+      toast.error("Esta conta já está em aquecimento");
       return;
     }
 
@@ -94,69 +91,42 @@ export const WarmingPipelineAccountsDialog = ({
     setSaving(true);
     try {
       const toRemove = linkedAccounts.filter(id => !selectedAccounts.includes(id));
+      const toAdd = selectedAccounts.filter(id => !linkedAccounts.includes(id));
+
+      // Remove accounts
       if (toRemove.length > 0) {
         for (const accountId of toRemove) {
-          const { data: pipelineAccount } = await supabase
-            .from("warming_pipeline_accounts")
-            .select("paused_automations")
+          // Call warmup-stop-run for each run
+          const { data: runs } = await (supabase as any)
+            .from("warmup_runs")
+            .select("id")
+            .eq("sequence_id", pipelineId)
             .eq("account_id", accountId)
-            .eq("pipeline_id", pipelineId)
-            .maybeSingle();
+            .in("status", ["running", "scheduled"]);
 
-          if (pipelineAccount?.paused_automations) {
-            const pausedIds = pipelineAccount.paused_automations as string[];
-            if (pausedIds.length > 0) {
-              await supabase
-                .from("periodic_posts")
-                .update({ is_active: true })
-                .in("id", pausedIds);
+          if (runs) {
+            for (const run of runs) {
+              await supabase.functions.invoke('warmup-stop-run', {
+                body: { runId: run.id }
+              });
             }
           }
         }
-
-        const { error: deleteError } = await supabase
-          .from("warming_pipeline_accounts")
-          .delete()
-          .eq("pipeline_id", pipelineId)
-          .in("account_id", toRemove);
-
-        if (deleteError) throw deleteError;
       }
 
-      const toAdd = selectedAccounts.filter(id => !linkedAccounts.includes(id));
+      // Add accounts
       if (toAdd.length > 0) {
-        for (const accountId of toAdd) {
-          const { data: activePosts } = await supabase
-            .from("periodic_posts")
-            .select("id")
-            .eq("account_id", accountId)
-            .eq("is_active", true);
-
-          const pausedIds = activePosts?.map(p => p.id) || [];
-
-          if (pausedIds.length > 0) {
-            await supabase
-              .from("periodic_posts")
-              .update({ is_active: false })
-              .in("id", pausedIds);
+        const { error } = await supabase.functions.invoke('warmup-assign-accounts', {
+          body: {
+            sequenceId: pipelineId,
+            accountIds: toAdd,
           }
+        });
 
-          const { error: insertError } = await supabase
-            .from("warming_pipeline_accounts")
-            .insert({
-              pipeline_id: pipelineId,
-              account_id: accountId,
-              status: "warming",
-              current_day: 1,
-              paused_automations: pausedIds,
-            });
-
-          if (insertError) throw insertError;
-        }
+        if (error) throw error;
       }
 
       toast.success("Contas atualizadas com sucesso!");
-      onSuccess?.();
       onOpenChange(false);
     } catch (error: any) {
       console.error("Erro ao salvar contas:", error);
@@ -171,7 +141,9 @@ export const WarmingPipelineAccountsDialog = ({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Selecionar Contas</DialogTitle>
-          <p className="text-sm text-muted-foreground">{pipelineName}</p>
+          <DialogDescription>
+            Escolha as contas que participarão desta esteira de aquecimento
+          </DialogDescription>
         </DialogHeader>
 
         {loading ? (
