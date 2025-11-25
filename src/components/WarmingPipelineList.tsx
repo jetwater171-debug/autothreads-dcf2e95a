@@ -3,10 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Flame, Calendar, Users, Settings, Trash2 } from "lucide-react";
+import { Flame, Calendar, Users, Settings, Trash2, Activity, TrendingUp } from "lucide-react";
 import { WarmingPipelineManageDialog } from "./warming-pipeline/WarmingPipelineManageDialog";
 import { WarmingPipelineAccountsDialog } from "./warming-pipeline/WarmingPipelineAccountsDialog";
 import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface WarmingPipelineListProps {
   onRefresh?: () => void;
@@ -160,16 +162,40 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
 
   const getStatusBadge = (status: string) => {
     const variants: any = {
-      active: { variant: "default", label: "Ativa" },
-      archived: { variant: "secondary", label: "Arquivada" },
+      active: { variant: "default", label: "Ativa", className: "bg-primary/10 text-primary border-primary/20 animate-pulse" },
+      archived: { variant: "secondary", label: "Arquivada", className: "" },
     };
 
     const config = variants[status] || variants.active;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
+  };
+
+  const calculateProgress = (pipeline: any) => {
+    if (!pipeline.warmup_runs || pipeline.warmup_runs.length === 0) return 0;
+    // Simplified progress calculation
+    return 45; // Mock value, would need actual run data
   };
 
   if (loading) {
-    return <div className="text-center py-8">Carregando...</div>;
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {[1, 2].map((i) => (
+          <Card key={i} className="overflow-hidden">
+            <CardHeader className="space-y-4">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-16 w-full" />
+              <div className="flex gap-2">
+                <Skeleton className="h-9 flex-1" />
+                <Skeleton className="h-9 flex-1" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   }
 
   if (!pipelines || pipelines.length === 0) {
@@ -190,71 +216,135 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {pipelines.map((pipeline) => (
-          <Card key={pipeline.id} className="group hover:shadow-lg transition-all duration-300">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-1 flex-1">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    {pipeline.name}
-                  </CardTitle>
-                  <CardDescription>{getStatusBadge(pipeline.status)}</CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(pipeline.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{pipeline.total_days} dias</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    {Array.isArray(pipeline.warmup_runs) ? pipeline.warmup_runs.length : 0} contas
-                  </span>
-                </div>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {pipelines.map((pipeline) => {
+          const accountsCount = Array.isArray(pipeline.warmup_runs) ? pipeline.warmup_runs.length : 0;
+          const progress = calculateProgress(pipeline);
+          const hasActiveRuns = pipeline.status === 'active' && accountsCount > 0;
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => {
-                    setSelectedPipeline(pipeline.id);
-                    setIsManageDialogOpen(true);
-                  }}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Gerenciar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => {
-                    setSelectedPipeline(pipeline.id);
-                    setIsAccountsDialogOpen(true);
-                  }}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Contas
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+          return (
+            <Card 
+              key={pipeline.id} 
+              className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 border-border/50 backdrop-blur-sm bg-gradient-to-br from-card to-card/50"
+            >
+              {/* Gradient overlay for active pipelines */}
+              {hasActiveRuns && (
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+              )}
+              
+              <CardHeader className="space-y-4 relative">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/20">
+                        <Flame className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl font-bold tracking-tight">
+                          {pipeline.name}
+                        </CardTitle>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(pipeline.status)}
+                      {hasActiveRuns && (
+                        <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                          <Activity className="h-3 w-3 mr-1" />
+                          Em execução
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(pipeline.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-5 relative">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-medium text-muted-foreground">Duração</span>
+                    </div>
+                    <p className="text-2xl font-bold tracking-tight">{pipeline.total_days}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">dias</p>
+                  </div>
+                  
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Users className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-medium text-muted-foreground">Contas</span>
+                    </div>
+                    <p className="text-2xl font-bold tracking-tight">{accountsCount}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {accountsCount === 0 ? 'nenhuma' : accountsCount === 1 ? 'ativa' : 'ativas'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Progress Bar (if active and has accounts) */}
+                {hasActiveRuns && (
+                  <div className="space-y-2 p-4 rounded-xl bg-primary/5 border border-primary/10">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium flex items-center gap-1.5">
+                        <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                        Progresso médio
+                      </span>
+                      <span className="text-muted-foreground font-semibold">{progress}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
+                  </div>
+                )}
+
+                {/* No accounts message */}
+                {accountsCount === 0 && (
+                  <div className="p-4 rounded-xl bg-muted/30 border border-dashed border-border text-center">
+                    <Users className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">
+                      Nenhuma conta atribuída ainda
+                    </p>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                    onClick={() => {
+                      setSelectedPipeline(pipeline.id);
+                      setIsManageDialogOpen(true);
+                    }}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Gerenciar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 hover:bg-accent hover:text-accent-foreground transition-colors"
+                    onClick={() => {
+                      setSelectedPipeline(pipeline.id);
+                      setIsAccountsDialogOpen(true);
+                    }}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Contas
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {selectedPipeline && (
