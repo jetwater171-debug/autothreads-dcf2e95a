@@ -107,18 +107,11 @@ const Analytics = () => {
 
   const handleStopWarming = async () => {
     try {
-      // Get the active run for this account
-      const { data: account } = await supabase
-        .from("threads_accounts")
-        .select("active_warmup_run_id")
-        .eq("id", pendingAccountId)
-        .single();
-
-      if (account?.active_warmup_run_id) {
-        await supabase.functions.invoke('warmup-stop-run', {
-          body: { runId: account.active_warmup_run_id }
-        });
-      }
+      await supabase
+        .from("warming_pipeline_accounts")
+        .update({ status: "cancelled" })
+        .eq("account_id", pendingAccountId)
+        .eq("status", "warming");
 
       setSelectedAccount(pendingAccountId);
       setShowWarmingDialog(false);

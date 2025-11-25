@@ -324,7 +324,6 @@ export type Database = {
           posted_at: string
           threads_post_id: string | null
           user_id: string
-          warmup_run_id: string | null
         }
         Insert: {
           account_id: string
@@ -341,7 +340,6 @@ export type Database = {
           posted_at?: string
           threads_post_id?: string | null
           user_id: string
-          warmup_run_id?: string | null
         }
         Update: {
           account_id?: string
@@ -358,7 +356,6 @@ export type Database = {
           posted_at?: string
           threads_post_id?: string | null
           user_id?: string
-          warmup_run_id?: string | null
         }
         Relationships: [
           {
@@ -375,20 +372,12 @@ export type Database = {
             referencedRelation: "phrases"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "post_history_warmup_run_id_fkey"
-            columns: ["warmup_run_id"]
-            isOneToOne: false
-            referencedRelation: "warmup_runs"
-            referencedColumns: ["id"]
-          },
         ]
       }
       threads_accounts: {
         Row: {
           access_token: string
           account_id: string
-          active_warmup_run_id: string | null
           connected_at: string | null
           created_at: string | null
           id: string
@@ -399,12 +388,10 @@ export type Database = {
           updated_at: string | null
           user_id: string
           username: string | null
-          warmup_status: string
         }
         Insert: {
           access_token: string
           account_id: string
-          active_warmup_run_id?: string | null
           connected_at?: string | null
           created_at?: string | null
           id?: string
@@ -415,12 +402,10 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           username?: string | null
-          warmup_status?: string
         }
         Update: {
           access_token?: string
           account_id?: string
-          active_warmup_run_id?: string | null
           connected_at?: string | null
           created_at?: string | null
           id?: string
@@ -431,137 +416,223 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           username?: string | null
-          warmup_status?: string
+        }
+        Relationships: []
+      }
+      warming_pipeline_accounts: {
+        Row: {
+          account_id: string
+          completed_at: string | null
+          created_at: string
+          current_day: number
+          id: string
+          paused_automations: Json | null
+          pipeline_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          completed_at?: string | null
+          created_at?: string
+          current_day?: number
+          id?: string
+          paused_automations?: Json | null
+          pipeline_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          completed_at?: string | null
+          created_at?: string
+          current_day?: number
+          id?: string
+          paused_automations?: Json | null
+          pipeline_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "threads_accounts_active_warmup_run_id_fkey"
-            columns: ["active_warmup_run_id"]
+            foreignKeyName: "warming_pipeline_accounts_account_id_fkey"
+            columns: ["account_id"]
             isOneToOne: false
-            referencedRelation: "warmup_runs"
+            referencedRelation: "threads_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warming_pipeline_accounts_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "warming_pipelines"
             referencedColumns: ["id"]
           },
         ]
       }
-      warmup_day_post_carousel_images: {
+      warming_pipeline_days: {
         Row: {
           created_at: string
-          day_post_id: string
+          day_number: number
           id: string
-          image_id: string
-          position: number
+          pipeline_id: string
+          posts_count: number
         }
         Insert: {
           created_at?: string
-          day_post_id: string
+          day_number: number
           id?: string
-          image_id: string
-          position: number
+          pipeline_id: string
+          posts_count?: number
         }
         Update: {
           created_at?: string
-          day_post_id?: string
+          day_number?: number
           id?: string
-          image_id?: string
-          position?: number
+          pipeline_id?: string
+          posts_count?: number
         }
         Relationships: [
           {
-            foreignKeyName: "warmup_day_post_carousel_images_day_post_id_fkey"
-            columns: ["day_post_id"]
+            foreignKeyName: "warming_pipeline_days_pipeline_id_fkey"
+            columns: ["pipeline_id"]
             isOneToOne: false
-            referencedRelation: "warmup_day_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_day_post_carousel_images_image_id_fkey"
-            columns: ["image_id"]
-            isOneToOne: false
-            referencedRelation: "images"
+            referencedRelation: "warming_pipelines"
             referencedColumns: ["id"]
           },
         ]
       }
-      warmup_day_posts: {
+      warming_pipeline_executions: {
         Row: {
-          content_type: string
+          created_at: string
+          error_message: string | null
+          executed_at: string
+          id: string
+          pipeline_account_id: string
+          post_id: string
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          pipeline_account_id: string
+          post_id: string
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          pipeline_account_id?: string
+          post_id?: string
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warming_pipeline_executions_pipeline_account_id_fkey"
+            columns: ["pipeline_account_id"]
+            isOneToOne: false
+            referencedRelation: "warming_pipeline_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warming_pipeline_executions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "warming_pipeline_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warming_pipeline_posts: {
+        Row: {
+          carousel_image_ids: string[] | null
           created_at: string
           custom_text: string | null
           day_id: string
           id: string
-          intelligent_delay: boolean
-          order_index: number
+          image_mode: string | null
+          post_order: number
+          post_type: string
           random_image_folder_id: string | null
           random_phrase_folder_id: string | null
+          scheduled_time: string
           specific_image_id: string | null
           specific_phrase_id: string | null
-          time_of_day: string
-          use_random_image: boolean
-          use_random_phrase: boolean
+          text_mode: string | null
+          use_intelligent_delay: boolean
         }
         Insert: {
-          content_type: string
+          carousel_image_ids?: string[] | null
           created_at?: string
           custom_text?: string | null
           day_id: string
           id?: string
-          intelligent_delay?: boolean
-          order_index: number
+          image_mode?: string | null
+          post_order: number
+          post_type: string
           random_image_folder_id?: string | null
           random_phrase_folder_id?: string | null
+          scheduled_time: string
           specific_image_id?: string | null
           specific_phrase_id?: string | null
-          time_of_day: string
-          use_random_image?: boolean
-          use_random_phrase?: boolean
+          text_mode?: string | null
+          use_intelligent_delay?: boolean
         }
         Update: {
-          content_type?: string
+          carousel_image_ids?: string[] | null
           created_at?: string
           custom_text?: string | null
           day_id?: string
           id?: string
-          intelligent_delay?: boolean
-          order_index?: number
+          image_mode?: string | null
+          post_order?: number
+          post_type?: string
           random_image_folder_id?: string | null
           random_phrase_folder_id?: string | null
+          scheduled_time?: string
           specific_image_id?: string | null
           specific_phrase_id?: string | null
-          time_of_day?: string
-          use_random_image?: boolean
-          use_random_phrase?: boolean
+          text_mode?: string | null
+          use_intelligent_delay?: boolean
         }
         Relationships: [
           {
-            foreignKeyName: "warmup_day_posts_day_id_fkey"
+            foreignKeyName: "warming_pipeline_posts_day_id_fkey"
             columns: ["day_id"]
             isOneToOne: false
-            referencedRelation: "warmup_days"
+            referencedRelation: "warming_pipeline_days"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "warmup_day_posts_random_image_folder_id_fkey"
+            foreignKeyName: "warming_pipeline_posts_random_image_folder_id_fkey"
             columns: ["random_image_folder_id"]
             isOneToOne: false
             referencedRelation: "content_folders"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "warmup_day_posts_random_phrase_folder_id_fkey"
+            foreignKeyName: "warming_pipeline_posts_random_phrase_folder_id_fkey"
             columns: ["random_phrase_folder_id"]
             isOneToOne: false
             referencedRelation: "content_folders"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "warmup_day_posts_specific_image_id_fkey"
+            foreignKeyName: "warming_pipeline_posts_specific_image_id_fkey"
             columns: ["specific_image_id"]
             isOneToOne: false
             referencedRelation: "images"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "warmup_day_posts_specific_phrase_id_fkey"
+            foreignKeyName: "warming_pipeline_posts_specific_phrase_id_fkey"
             columns: ["specific_phrase_id"]
             isOneToOne: false
             referencedRelation: "phrases"
@@ -569,203 +640,11 @@ export type Database = {
           },
         ]
       }
-      warmup_days: {
-        Row: {
-          created_at: string
-          day_index: number
-          id: string
-          is_rest: boolean
-          sequence_id: string
-        }
-        Insert: {
-          created_at?: string
-          day_index: number
-          id?: string
-          is_rest?: boolean
-          sequence_id: string
-        }
-        Update: {
-          created_at?: string
-          day_index?: number
-          id?: string
-          is_rest?: boolean
-          sequence_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "warmup_days_sequence_id_fkey"
-            columns: ["sequence_id"]
-            isOneToOne: false
-            referencedRelation: "warmup_sequences"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      warmup_paused_automations: {
-        Row: {
-          account_id: string
-          automation_id: string
-          automation_type: string
-          created_at: string
-          id: string
-          previous_state: Json | null
-          run_id: string
-        }
-        Insert: {
-          account_id: string
-          automation_id: string
-          automation_type: string
-          created_at?: string
-          id?: string
-          previous_state?: Json | null
-          run_id: string
-        }
-        Update: {
-          account_id?: string
-          automation_id?: string
-          automation_type?: string
-          created_at?: string
-          id?: string
-          previous_state?: Json | null
-          run_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "warmup_paused_automations_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "threads_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_paused_automations_run_id_fkey"
-            columns: ["run_id"]
-            isOneToOne: false
-            referencedRelation: "warmup_runs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      warmup_runs: {
-        Row: {
-          account_id: string
-          completed_at: string | null
-          created_at: string
-          current_day_index: number | null
-          id: string
-          sequence_id: string
-          started_at: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          account_id: string
-          completed_at?: string | null
-          created_at?: string
-          current_day_index?: number | null
-          id?: string
-          sequence_id: string
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          account_id?: string
-          completed_at?: string | null
-          created_at?: string
-          current_day_index?: number | null
-          id?: string
-          sequence_id?: string
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "warmup_runs_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "threads_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_runs_sequence_id_fkey"
-            columns: ["sequence_id"]
-            isOneToOne: false
-            referencedRelation: "warmup_sequences"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      warmup_scheduled_posts: {
-        Row: {
-          attempts: number
-          created_at: string
-          day_id: string
-          day_post_id: string
-          error_message: string | null
-          executed_at: string | null
-          id: string
-          run_id: string
-          scheduled_at: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          attempts?: number
-          created_at?: string
-          day_id: string
-          day_post_id: string
-          error_message?: string | null
-          executed_at?: string | null
-          id?: string
-          run_id: string
-          scheduled_at: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          attempts?: number
-          created_at?: string
-          day_id?: string
-          day_post_id?: string
-          error_message?: string | null
-          executed_at?: string | null
-          id?: string
-          run_id?: string
-          scheduled_at?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "warmup_scheduled_posts_day_id_fkey"
-            columns: ["day_id"]
-            isOneToOne: false
-            referencedRelation: "warmup_days"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_scheduled_posts_day_post_id_fkey"
-            columns: ["day_post_id"]
-            isOneToOne: false
-            referencedRelation: "warmup_day_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_scheduled_posts_run_id_fkey"
-            columns: ["run_id"]
-            isOneToOne: false
-            referencedRelation: "warmup_runs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      warmup_sequences: {
+      warming_pipelines: {
         Row: {
           created_at: string
           id: string
-          name: string | null
+          name: string
           status: string
           total_days: number
           updated_at: string
@@ -774,7 +653,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          name?: string | null
+          name: string
           status?: string
           total_days: number
           updated_at?: string
@@ -783,7 +662,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          name?: string | null
+          name?: string
           status?: string
           total_days?: number
           updated_at?: string
