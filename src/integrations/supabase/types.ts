@@ -486,6 +486,7 @@ export type Database = {
         Row: {
           content_type: string
           created_at: string
+          custom_text: string | null
           day_id: string
           id: string
           intelligent_delay: boolean
@@ -501,6 +502,7 @@ export type Database = {
         Insert: {
           content_type: string
           created_at?: string
+          custom_text?: string | null
           day_id: string
           id?: string
           intelligent_delay?: boolean
@@ -516,6 +518,7 @@ export type Database = {
         Update: {
           content_type?: string
           created_at?: string
+          custom_text?: string | null
           day_id?: string
           id?: string
           intelligent_delay?: boolean

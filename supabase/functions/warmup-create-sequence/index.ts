@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
               time_of_day: post.time,
               intelligent_delay: post.intelligentDelay,
               content_type: post.contentType,
+              custom_text: post.customText || null,
               use_random_phrase: post.useRandomPhrase,
               specific_phrase_id: post.specificPhraseId || null,
               random_phrase_folder_id: post.randomPhraseFolderId || null,

@@ -34,6 +34,7 @@ export const WarmingPipelineStep3 = ({ data, onBack, onComplete }: WarmingPipeli
           time: post.scheduledTime,
           intelligentDelay: post.useIntelligentDelay,
           contentType: post.postType,
+          customText: post.textMode === 'custom' ? post.customText : undefined,
           useRandomPhrase: post.textMode === 'random' || post.textMode === 'random_folder',
           specificPhraseId: post.textMode === 'specific' ? post.specificPhraseId : undefined,
           randomPhraseFolderId: post.textMode === 'random_folder' ? post.randomPhraseFolderId : undefined,
