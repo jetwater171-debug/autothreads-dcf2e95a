@@ -128,7 +128,10 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
                 variant="outline" 
                 size="sm" 
                 className="flex-1 gap-2"
-                onClick={() => toast.info("Funcionalidade em desenvolvimento")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.href = `/warming-pipeline/${pipeline.id}`;
+                }}
               >
                 <Settings className="h-4 w-4" />
                 Gerenciar
@@ -137,7 +140,10 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
                 variant="outline" 
                 size="sm" 
                 className="flex-1 gap-2"
-                onClick={() => toast.info("Funcionalidade em desenvolvimento")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.href = `/warming-pipeline/${pipeline.id}/accounts`;
+                }}
               >
                 <Users className="h-4 w-4" />
                 Contas
@@ -145,7 +151,10 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleDelete(pipeline.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(pipeline.id);
+                }}
                 className="text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
