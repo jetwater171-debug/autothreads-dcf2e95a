@@ -7,15 +7,18 @@ import { MessageSquare, Calendar, Users, AlertCircle, CheckCircle2, XCircle } fr
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { ThreadsPostPreview } from "@/components/ThreadsPostPreview";
 
 interface PostHistory {
   id: string;
   content: string;
   posted_at: string;
   account_username: string | null;
+  account_profile_picture: string | null;
   error_message: string | null;
   duplicate_skipped: boolean;
   attempts: number | null;
+  image_urls: string[] | null;
 }
 
 const PostHistory = () => {
@@ -47,7 +50,8 @@ const PostHistory = () => {
           error_message,
           duplicate_skipped,
           attempts,
-          threads_accounts!post_history_account_id_fkey (username)
+          image_urls,
+          threads_accounts!post_history_account_id_fkey (username, profile_picture_url)
         `)
         .order("posted_at", { ascending: false });
 
@@ -58,9 +62,11 @@ const PostHistory = () => {
         content: post.content,
         posted_at: post.posted_at,
         account_username: post.threads_accounts?.username || null,
+        account_profile_picture: post.threads_accounts?.profile_picture_url || null,
         error_message: post.error_message,
         duplicate_skipped: post.duplicate_skipped,
-        attempts: post.attempts
+        attempts: post.attempts,
+        image_urls: post.image_urls
       })) || [];
 
       setPostHistory(formattedHistory);
@@ -134,14 +140,14 @@ const PostHistory = () => {
                 {postHistory.map((post) => (
                   <div
                     key={post.id}
-                    className="border-l-2 border-primary/50 pl-4 py-3 hover:border-primary hover:bg-primary/5 transition-all duration-300 rounded-r-xl relative group"
+                    className="border-2 rounded-xl p-4 hover:border-primary/50 transition-all duration-300"
                   >
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <p className="font-medium flex-1 line-clamp-2">{post.content}</p>
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <h3 className="font-medium text-sm">Detalhes da Publicação</h3>
                       {getStatusBadge(post)}
                     </div>
                     
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap mb-4">
                       <span className="flex items-center gap-1.5">
                         <Users className="h-3.5 w-3.5" />
                         {post.account_username || "Conta desconhecida"}
@@ -153,13 +159,22 @@ const PostHistory = () => {
                     </div>
 
                     {post.error_message && (
-                      <div className="mt-3 pt-3 border-t border-destructive/20">
+                      <div className="mb-4 p-3 border-l-2 border-destructive bg-destructive/5 rounded-r">
                         <p className="text-xs text-destructive flex items-start gap-2">
                           <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
                           <span className="flex-1">{post.error_message}</span>
                         </p>
                       </div>
                     )}
+
+                    {/* Preview do Post */}
+                    <ThreadsPostPreview
+                      username={post.account_username || "usuario"}
+                      profilePicture={post.account_profile_picture || undefined}
+                      content={post.content}
+                      images={post.image_urls || undefined}
+                      timestamp={format(new Date(post.posted_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    />
                   </div>
                 ))}
               </div>

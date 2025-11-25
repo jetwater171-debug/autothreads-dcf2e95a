@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { PeriodicPostWizard, WizardData } from "@/components/PeriodicPostWizard";
+import { ThreadsPostPreview } from "@/components/ThreadsPostPreview";
 
 interface PeriodicPost {
   id: string;
@@ -653,6 +654,24 @@ const PeriodicPosts = () => {
                       </span>
                     </div>
                   )}
+                </div>
+
+                {/* Preview do Post */}
+                <div className="mt-4 pt-4 border-t">
+                  <h4 className="text-sm font-medium mb-3">Preview do Post</h4>
+                  <ThreadsPostPreview
+                    username={post.threads_accounts.username || "usuario"}
+                    profilePicture={post.threads_accounts.profile_picture_url || undefined}
+                    content={post.phrases?.content || (post.use_random_phrase ? "Frase será selecionada aleatoriamente" : "")}
+                    images={
+                      post.post_type === 'carousel' && post.carousel_image_ids
+                        ? []
+                        : post.images?.public_url
+                        ? [post.images.public_url]
+                        : []
+                    }
+                    timestamp="Preview"
+                  />
                 </div>
               </CardContent>
             </Card>

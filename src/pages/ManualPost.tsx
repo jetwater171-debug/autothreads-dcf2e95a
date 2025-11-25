@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { WarmingStatusBadge } from "@/components/WarmingStatusBadge";
 import { WarmingAccountDialog } from "@/components/WarmingAccountDialog";
 import { useAccountWarmingStatus } from "@/hooks/useAccountWarmingStatus";
+import { ThreadsPostPreview } from "@/components/ThreadsPostPreview";
 
 interface ThreadsAccount {
   id: string;
@@ -470,6 +471,27 @@ const ManualPost = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Preview do Post */}
+        {(text.trim() || uploadedImages.length > 0) && selectedAccount && (
+          <Card className="border-2">
+            <CardHeader>
+              <CardTitle className="text-xl">Preview do Post</CardTitle>
+              <CardDescription className="text-base">
+                Veja como seu post aparecerá no Threads
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ThreadsPostPreview
+                username={accounts.find(a => a.id === selectedAccount)?.username || "usuario"}
+                profilePicture={accounts.find(a => a.id === selectedAccount)?.profile_picture_url || undefined}
+                content={text}
+                images={uploadedImages}
+                timestamp="Agora"
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <WarmingAccountDialog
