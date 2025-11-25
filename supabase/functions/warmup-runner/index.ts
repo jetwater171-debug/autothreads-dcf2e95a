@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
       .from('warmup_scheduled_posts')
       .select(`
         *,
-        warmup_runs!inner(*),
+        warmup_runs!inner(*, warmup_sequences!inner(user_id)),
         warmup_day_posts!inner(*, warmup_day_post_carousel_images(*, images(*))),
         warmup_days!inner(*)
       `)

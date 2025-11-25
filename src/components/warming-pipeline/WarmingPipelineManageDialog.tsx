@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +59,7 @@ export const WarmingPipelineManageDialog = ({
           .from("warmup_runs")
           .select(`
             *,
-            threads_accounts(username, profile_picture_url)
+            threads_accounts!warmup_runs_account_id_fkey(username, profile_picture_url)
           `)
           .eq("sequence_id", pipelineId)
       ]);
@@ -108,9 +108,9 @@ export const WarmingPipelineManageDialog = ({
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl">{pipeline?.name}</DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <DialogDescription className="mt-1">
                 {pipeline?.total_days} dias • {runs.length} execução(ões)
-              </p>
+              </DialogDescription>
             </div>
             {pipeline && getStatusBadge(pipeline.status)}
           </div>
