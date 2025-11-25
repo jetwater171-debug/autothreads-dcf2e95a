@@ -4,9 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users } from "lucide-react";
+import { Clock, Users, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WarmingScheduledPostsList } from "./WarmingScheduledPostsList";
 
 interface WarmingPipelineManageDialogProps {
   open: boolean;
@@ -122,6 +123,10 @@ export const WarmingPipelineManageDialog = ({
             <TabsList>
               <TabsTrigger value="schedule">Cronograma</TabsTrigger>
               <TabsTrigger value="runs">Execuções ({runs.length})</TabsTrigger>
+              <TabsTrigger value="scheduled">
+                <ListChecks className="h-3.5 w-3.5 mr-1.5" />
+                Posts Agendados
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="schedule" className="space-y-4 mt-6">
@@ -192,6 +197,37 @@ export const WarmingPipelineManageDialog = ({
                     </div>
                   </Card>
                 ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="scheduled" className="space-y-3 mt-6">
+              {runs.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <ListChecks className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold text-sm mb-2">Nenhuma execução ativa</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Adicione contas para visualizar os posts agendados
+                  </p>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  {runs.filter(run => run.status === 'running').map((run: any) => (
+                    <div key={run.id}>
+                      <div className="flex items-center gap-3 mb-3">
+                        {run.threads_accounts?.profile_picture_url && (
+                          <img
+                            src={run.threads_accounts.profile_picture_url}
+                            alt={run.threads_accounts.username}
+                            className="w-6 h-6 rounded-full"
+                          />
+                        )}
+                        <h3 className="font-semibold text-sm">@{run.threads_accounts?.username}</h3>
+                        {getRunStatusBadge(run.status)}
+                      </div>
+                      <WarmingScheduledPostsList runId={run.id} />
+                    </div>
+                  ))}
+                </div>
               )}
             </TabsContent>
           </Tabs>
