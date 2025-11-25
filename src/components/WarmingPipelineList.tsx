@@ -6,13 +6,24 @@ import { Badge } from "@/components/ui/badge";
 import { Settings, Trash2, Users, Flame } from "lucide-react";
 import { toast } from "sonner";
 
-export const WarmingPipelineList = () => {
+interface WarmingPipelineListProps {
+  onRefresh?: () => void;
+}
+
+export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}) => {
   const [pipelines, setPipelines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadPipelines();
   }, []);
+
+  useEffect(() => {
+    if (onRefresh) {
+      // Expor função de reload para componente pai
+      (window as any).__reloadWarmingPipelines = loadPipelines;
+    }
+  }, [onRefresh]);
 
   const loadPipelines = async () => {
     try {
@@ -113,11 +124,21 @@ export const WarmingPipelineList = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 gap-2"
+                onClick={() => toast.info("Funcionalidade em desenvolvimento")}
+              >
                 <Settings className="h-4 w-4" />
                 Gerenciar
               </Button>
-              <Button variant="outline" size="sm" className="flex-1 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 gap-2"
+                onClick={() => toast.info("Funcionalidade em desenvolvimento")}
+              >
                 <Users className="h-4 w-4" />
                 Contas
               </Button>

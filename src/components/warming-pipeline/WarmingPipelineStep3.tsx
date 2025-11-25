@@ -77,6 +77,12 @@ export const WarmingPipelineStep3 = ({ data, onBack, onComplete }: WarmingPipeli
       }
 
       toast.success("Esteira criada com sucesso!");
+      
+      // Recarregar lista de esteiras
+      if ((window as any).__reloadWarmingPipelines) {
+        await (window as any).__reloadWarmingPipelines();
+      }
+      
       onComplete();
     } catch (error: any) {
       console.error("Erro ao criar esteira:", error);
