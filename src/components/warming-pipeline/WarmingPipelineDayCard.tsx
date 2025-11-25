@@ -28,6 +28,8 @@ export const WarmingPipelineDayCard = ({ day, onUpdate }: WarmingPipelineDayCard
         scheduledTime: "09:00",
         useIntelligentDelay: false,
         postType: "text",
+        textMode: "custom",
+        customText: "",
       };
     });
     
