@@ -43,12 +43,12 @@ export const WarmingPipelineAccountsDialog = ({
 
       // Load accounts and linked runs in parallel
       const [accountsResult, linkedResult] = await Promise.all([
-        supabase
+        (supabase as any)
           .from("threads_accounts")
           .select("id, username, profile_picture_url, account_id")
           .eq("user_id", user.id)
           .eq("is_active", true),
-        supabase
+        (supabase as any)
           .from("warmup_runs")
           .select("account_id")
           .eq("sequence_id", pipelineId)
@@ -97,7 +97,7 @@ export const WarmingPipelineAccountsDialog = ({
       if (toRemove.length > 0) {
         for (const accountId of toRemove) {
           // Call warmup-stop-run for each run
-          const { data: runs } = await supabase
+          const { data: runs } = await (supabase as any)
             .from("warmup_runs")
             .select("id")
             .eq("sequence_id", pipelineId)

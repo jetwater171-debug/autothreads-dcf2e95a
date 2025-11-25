@@ -41,13 +41,13 @@ export const WarmingPipelineManageDialog = ({
 
       // Load all data in parallel
       const [pipelineResult, daysResult, runsResult] = await Promise.all([
-        supabase
+        (supabase as any)
           .from("warmup_sequences")
           .select("*")
           .eq("id", pipelineId)
           .eq("user_id", user.id)
           .single(),
-        supabase
+        (supabase as any)
           .from("warmup_days")
           .select(`
             *,
@@ -55,7 +55,7 @@ export const WarmingPipelineManageDialog = ({
           `)
           .eq("sequence_id", pipelineId)
           .order("day_index"),
-        supabase
+        (supabase as any)
           .from("warmup_runs")
           .select(`
             *,

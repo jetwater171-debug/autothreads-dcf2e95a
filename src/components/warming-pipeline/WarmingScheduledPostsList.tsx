@@ -60,15 +60,45 @@ export const WarmingScheduledPostsList = ({ runId }: WarmingScheduledPostsListPr
       const { data, error } = await (supabase as any)
         .from('warmup_scheduled_posts')
         .select(`
-          *,
-          warmup_day_posts!inner(content_type, time_of_day),
-          warmup_days!inner(day_index)
+          id,
+          scheduled_at,
+          executed_at,
+          status,
+          error_message,
+          attempts,
+          day_post_id,
+          day_id
         `)
         .eq('run_id', runId)
         .order('scheduled_at', { ascending: true });
 
       if (error) throw error;
-      setPosts(data || []);
+
+      // Load related data separately
+      const postsWithRelations = await Promise.all(
+        (data || []).map(async (post: any) => {
+          const [dayPostResult, dayResult] = await Promise.all([
+            (supabase as any)
+              .from('warmup_day_posts')
+              .select('content_type, time_of_day')
+              .eq('id', post.day_post_id)
+              .single(),
+            (supabase as any)
+              .from('warmup_days')
+              .select('day_index')
+              .eq('id', post.day_id)
+              .single()
+          ]);
+
+          return {
+            ...post,
+            warmup_day_posts: dayPostResult.data || { content_type: 'text', time_of_day: '00:00' },
+            warmup_days: dayResult.data || { day_index: 0 }
+          };
+        })
+      );
+
+      setPosts(postsWithRelations);
     } catch (error) {
       console.error('Erro ao carregar posts agendados:', error);
     } finally {
