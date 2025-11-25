@@ -12,18 +12,18 @@ interface WarmingPipelineManageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pipelineId: string;
-  onManageAccounts: () => void;
+  onUpdate?: () => void;
 }
 
 export const WarmingPipelineManageDialog = ({ 
   open, 
   onOpenChange, 
   pipelineId,
-  onManageAccounts 
+  onUpdate
 }: WarmingPipelineManageDialogProps) => {
   const [pipeline, setPipeline] = useState<any>(null);
   const [days, setDays] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [runs, setRuns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,42 +38,38 @@ export const WarmingPipelineManageDialog = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Carregar todos os dados em paralelo para melhor performance
-      const [pipelineResult, daysResult, accountsResult] = await Promise.all([
+      // Load all data in parallel
+      const [pipelineResult, daysResult, runsResult] = await Promise.all([
         supabase
-          .from("warming_pipelines")
+          .from("warmup_sequences")
           .select("*")
           .eq("id", pipelineId)
           .eq("user_id", user.id)
           .single(),
         supabase
-          .from("warming_pipeline_days")
+          .from("warmup_days")
           .select(`
-            id,
-            day_number,
-            posts_count,
-            warming_pipeline_posts(*)
+            *,
+            warmup_day_posts(*)
           `)
-          .eq("pipeline_id", pipelineId)
-          .order("day_number"),
+          .eq("sequence_id", pipelineId)
+          .order("day_index"),
         supabase
-          .from("warming_pipeline_accounts")
+          .from("warmup_runs")
           .select(`
-            id,
-            status,
-            current_day,
+            *,
             threads_accounts(username, profile_picture_url)
           `)
-          .eq("pipeline_id", pipelineId)
+          .eq("sequence_id", pipelineId)
       ]);
 
       if (pipelineResult.error) throw pipelineResult.error;
       if (daysResult.error) throw daysResult.error;
-      if (accountsResult.error) throw accountsResult.error;
+      if (runsResult.error) throw runsResult.error;
 
       setPipeline(pipelineResult.data);
       setDays(daysResult.data || []);
-      setAccounts(accountsResult.data || []);
+      setRuns(runsResult.data || []);
 
     } catch (error: any) {
       console.error("Erro ao carregar esteira:", error);
@@ -87,10 +83,20 @@ export const WarmingPipelineManageDialog = ({
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; label: string }> = {
       active: { variant: "default", label: "Ativa" },
-      paused: { variant: "secondary", label: "Pausada" },
-      completed: { variant: "outline", label: "Finalizada" },
+      archived: { variant: "secondary", label: "Arquivada" },
     };
     const config = variants[status] || variants.active;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getRunStatusBadge = (status: string) => {
+    const variants: Record<string, { variant: any; label: string }> = {
+      running: { variant: "default", label: "Em execução" },
+      scheduled: { variant: "secondary", label: "Agendado" },
+      completed: { variant: "outline", label: "Concluído" },
+      cancelled: { variant: "destructive", label: "Cancelado" },
+    };
+    const config = variants[status] || variants.running;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
@@ -102,16 +108,10 @@ export const WarmingPipelineManageDialog = ({
             <div>
               <DialogTitle className="text-2xl">{pipeline?.name}</DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                {pipeline?.total_days} dias • {accounts.length} conta(s)
+                {pipeline?.total_days} dias • {runs.length} execução(ões)
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              {pipeline && getStatusBadge(pipeline.status)}
-              <Button onClick={onManageAccounts} size="sm" className="gap-2">
-                <Users className="h-4 w-4" />
-                Gerenciar contas
-              </Button>
-            </div>
+            {pipeline && getStatusBadge(pipeline.status)}
           </div>
         </DialogHeader>
 
@@ -121,7 +121,7 @@ export const WarmingPipelineManageDialog = ({
           <Tabs defaultValue="schedule" className="w-full">
             <TabsList>
               <TabsTrigger value="schedule">Cronograma</TabsTrigger>
-              <TabsTrigger value="accounts">Contas ({accounts.length})</TabsTrigger>
+              <TabsTrigger value="runs">Execuções ({runs.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="schedule" className="space-y-4 mt-6">
@@ -129,35 +129,28 @@ export const WarmingPipelineManageDialog = ({
                 <Card key={day.id} className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
-                      {day.day_number}
+                      {day.day_index}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-sm">Dia {day.day_number}</h4>
+                      <h4 className="font-semibold text-sm">Dia {day.day_index}</h4>
                       <p className="text-xs text-muted-foreground">
-                        {day.posts_count === 0 ? "Descanso" : `${day.posts_count} post${day.posts_count > 1 ? "s" : ""}`}
+                        {day.is_rest ? "Descanso" : `${day.warmup_day_posts?.length || 0} post(s)`}
                       </p>
                     </div>
                   </div>
 
-                  {day.warming_pipeline_posts && day.warming_pipeline_posts.length > 0 && (
+                  {day.warmup_day_posts && day.warmup_day_posts.length > 0 && (
                     <div className="space-y-2">
-                      {day.warming_pipeline_posts.map((post: any) => (
-                        <div key={post.id} className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs p-2 rounded-lg bg-muted/30">
-                            <Clock className="h-3 w-3 text-muted-foreground" />
-                            <span className="font-medium">{post.scheduled_time.substring(0, 5)}</span>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="capitalize">{post.post_type.replace("_", " + ")}</span>
-                            {post.use_intelligent_delay && (
-                              <Badge variant="secondary" className="ml-auto text-xs">
-                                Delay
-                              </Badge>
-                            )}
-                          </div>
-                          {post.custom_text && (
-                            <div className="pl-5 text-xs text-muted-foreground italic">
-                              "{post.custom_text.substring(0, 80)}{post.custom_text.length > 80 ? "..." : ""}"
-                            </div>
+                      {day.warmup_day_posts.map((post: any) => (
+                        <div key={post.id} className="flex items-center gap-2 text-xs p-2 rounded-lg bg-muted/30">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span className="font-medium">{post.time_of_day.substring(0, 5)}</span>
+                          <span className="text-muted-foreground">•</span>
+                          <span className="capitalize">{post.content_type.replace("_", " + ")}</span>
+                          {post.intelligent_delay && (
+                            <Badge variant="secondary" className="ml-auto text-xs">
+                              Delay
+                            </Badge>
                           )}
                         </div>
                       ))}
@@ -167,40 +160,35 @@ export const WarmingPipelineManageDialog = ({
               ))}
             </TabsContent>
 
-            <TabsContent value="accounts" className="space-y-3 mt-6">
-              {accounts.length === 0 ? (
+            <TabsContent value="runs" className="space-y-3 mt-6">
+              {runs.length === 0 ? (
                 <Card className="p-8 text-center">
                   <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                  <h3 className="font-semibold text-sm mb-2">Nenhuma conta vinculada</h3>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Adicione contas para começar o aquecimento
+                  <h3 className="font-semibold text-sm mb-2">Nenhuma execução</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Adicione contas para iniciar o aquecimento
                   </p>
-                  <Button onClick={onManageAccounts} size="sm">
-                    Adicionar contas
-                  </Button>
                 </Card>
               ) : (
-                accounts.map((account: any) => (
-                  <Card key={account.id} className="p-3">
+                runs.map((run: any) => (
+                  <Card key={run.id} className="p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        {account.threads_accounts?.profile_picture_url && (
+                        {run.threads_accounts?.profile_picture_url && (
                           <img
-                            src={account.threads_accounts.profile_picture_url}
-                            alt={account.threads_accounts.username}
+                            src={run.threads_accounts.profile_picture_url}
+                            alt={run.threads_accounts.username}
                             className="w-8 h-8 rounded-full"
                           />
                         )}
                         <div>
-                          <p className="font-semibold text-sm">@{account.threads_accounts?.username}</p>
+                          <p className="font-semibold text-sm">@{run.threads_accounts?.username}</p>
                           <p className="text-xs text-muted-foreground">
-                            Dia {account.current_day} de {pipeline?.total_days}
+                            {run.current_day_index ? `Dia ${run.current_day_index} de ${pipeline?.total_days}` : 'Aguardando início'}
                           </p>
                         </div>
                       </div>
-                      <Badge variant={account.status === "warming" ? "default" : "secondary"} className="text-xs">
-                        {account.status === "warming" ? "Aquecendo" : account.status === "completed" ? "Concluído" : "Parado"}
-                      </Badge>
+                      {getRunStatusBadge(run.status)}
                     </div>
                   </Card>
                 ))
