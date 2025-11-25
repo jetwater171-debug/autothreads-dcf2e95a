@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Flame, Calendar, Users, Settings, Trash2, Activity, TrendingUp } from "lucide-react";
+import { Flame, Calendar, Users, Settings, Trash2, Activity, TrendingUp, CheckCircle2, Clock } from "lucide-react";
 import { WarmingPipelineManageDialog } from "./warming-pipeline/WarmingPipelineManageDialog";
 import { WarmingPipelineAccountsDialog } from "./warming-pipeline/WarmingPipelineAccountsDialog";
 import { toast } from "sonner";
@@ -43,25 +43,32 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
 
       if (sequencesError) throw sequencesError;
 
-      // Load runs count and active runs for each sequence
+      // Load runs count and status breakdown for each sequence
       const pipelinesWithCounts = await Promise.all(
         (sequences || []).map(async (seq: any) => {
-          const { count } = await (supabase as any)
+          const { data: runs } = await (supabase as any)
             .from('warmup_runs')
-            .select('*', { count: 'exact', head: true })
+            .select('status')
             .eq('sequence_id', seq.id);
 
-          // Check if there are any running executions
-          const { data: runningRuns } = await (supabase as any)
-            .from('warmup_runs')
-            .select('id')
-            .eq('sequence_id', seq.id)
-            .eq('status', 'running');
+          const statusCounts = {
+            running: 0,
+            completed: 0,
+            scheduled: 0,
+            cancelled: 0,
+          };
+
+          (runs || []).forEach((run: any) => {
+            if (statusCounts.hasOwnProperty(run.status)) {
+              statusCounts[run.status as keyof typeof statusCounts]++;
+            }
+          });
 
           return {
             ...seq,
-            warmup_runs: Array(count || 0).fill(null), // Mock array for length
-            has_active_runs: runningRuns && runningRuns.length > 0,
+            warmup_runs: runs || [],
+            status_counts: statusCounts,
+            total_accounts: runs?.length || 0,
           };
         })
       );
@@ -168,20 +175,55 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: any = {
-      active: { variant: "default", label: "Ativa", className: "bg-primary/10 text-primary border-primary/20" },
-      archived: { variant: "secondary", label: "Arquivada", className: "" },
-    };
+  const getWarmupStatusBadge = (statusCounts: any, totalAccounts: number) => {
+    if (totalAccounts === 0) {
+      return (
+        <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border">
+          Sem contas
+        </Badge>
+      );
+    }
 
-    const config = variants[status] || variants.active;
-    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
+    if (statusCounts.completed === totalAccounts) {
+      return (
+        <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          Concluída
+        </Badge>
+      );
+    }
+
+    if (statusCounts.running > 0) {
+      return (
+        <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 animate-pulse">
+          <Activity className="h-3 w-3 mr-1" />
+          Aquecendo ({statusCounts.running})
+        </Badge>
+      );
+    }
+
+    if (statusCounts.scheduled > 0) {
+      return (
+        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+          <Clock className="h-3 w-3 mr-1" />
+          Agendada
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border">
+        Inativa
+      </Badge>
+    );
   };
 
   const calculateProgress = (pipeline: any) => {
-    if (!pipeline.warmup_runs || pipeline.warmup_runs.length === 0) return 0;
-    // Simplified progress calculation
-    return 45; // Mock value, would need actual run data
+    const total = pipeline.total_accounts;
+    if (total === 0) return 0;
+    
+    const completed = pipeline.status_counts?.completed || 0;
+    return Math.round((completed / total) * 100);
   };
 
   if (loading) {
@@ -226,18 +268,18 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {pipelines.map((pipeline) => {
-          const accountsCount = Array.isArray(pipeline.warmup_runs) ? pipeline.warmup_runs.length : 0;
+          const accountsCount = pipeline.total_accounts || 0;
           const progress = calculateProgress(pipeline);
-          const hasActiveRuns = pipeline.has_active_runs === true;
+          const isWarming = (pipeline.status_counts?.running || 0) > 0;
 
           return (
             <Card 
               key={pipeline.id} 
               className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 border-border/50 backdrop-blur-sm bg-gradient-to-br from-card to-card/50"
             >
-              {/* Gradient overlay for active pipelines */}
-              {hasActiveRuns && (
-                <div className="absolute inset-0 bg-gradient-to-br from-success/5 to-transparent pointer-events-none" />
+              {/* Gradient overlay for warming pipelines */}
+              {isWarming && (
+                <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-transparent pointer-events-none" />
               )}
               
               <CardHeader className="space-y-4 relative">
@@ -254,13 +296,7 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {getStatusBadge(pipeline.status)}
-                      {hasActiveRuns && (
-                        <Badge variant="outline" className="bg-success/10 text-success border-success/20 animate-pulse">
-                          <Activity className="h-3 w-3 mr-1" />
-                          Em execução
-                        </Badge>
-                      )}
+                      {getWarmupStatusBadge(pipeline.status_counts, accountsCount)}
                     </div>
                   </div>
                   <Button
@@ -298,13 +334,13 @@ export const WarmingPipelineList = ({ onRefresh }: WarmingPipelineListProps = {}
                   </div>
                 </div>
 
-                {/* Progress Bar (if active and has accounts) */}
-                {hasActiveRuns && (
-                  <div className="space-y-2 p-4 rounded-xl bg-primary/5 border border-primary/10">
+                {/* Progress Bar (if has completed accounts) */}
+                {accountsCount > 0 && progress > 0 && (
+                  <div className="space-y-2 p-4 rounded-xl bg-success/5 border border-success/10">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium flex items-center gap-1.5">
-                        <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                        Progresso médio
+                        <TrendingUp className="h-3.5 w-3.5 text-success" />
+                        Contas concluídas
                       </span>
                       <span className="text-muted-foreground font-semibold">{progress}%</span>
                     </div>
