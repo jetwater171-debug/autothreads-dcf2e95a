@@ -78,22 +78,32 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Verificar quais posts já foram executados hoje
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const { data: executedToday } = await supabase
-        .from("post_history")
+      // Buscar ID do warming_pipeline_account
+      const { data: pipelineAccountData } = await supabase
+        .from("warming_pipeline_accounts")
         .select("id")
         .eq("account_id", warmingAccount.account_id)
-        .gte("posted_at", today.toISOString());
+        .eq("pipeline_id", warmingAccount.pipeline_id)
+        .single();
 
-      const executedCount = executedToday?.length || 0;
-      console.log(`   📝 ${executedCount}/${posts.length} posts executados hoje`);
+      if (!pipelineAccountData) {
+        console.error("   ❌ Pipeline account não encontrado");
+        continue;
+      }
+
+      // Verificar quais posts já foram executados para esta conta nesta esteira
+      const { data: executedPosts } = await supabase
+        .from("warming_pipeline_executions")
+        .select("post_id")
+        .eq("pipeline_account_id", pipelineAccountData.id);
+
+      const executedPostIds = new Set(executedPosts?.map(e => e.post_id) || []);
+      const executedCount = executedPostIds.size;
+      console.log(`   📝 ${executedCount}/${posts.length} posts executados neste dia`);
 
       // Executar posts pendentes
       for (const post of posts) {
-        if (post.post_order <= executedCount) {
+        if (executedPostIds.has(post.id)) {
           console.log(`   ⏭️ Post ${post.post_order} já foi executado`);
           continue;
         }
@@ -201,8 +211,27 @@ Deno.serve(async (req) => {
 
           if (postError) {
             console.error(`   ❌ Erro ao criar post:`, postError);
+            
+            // Registrar falha
+            await supabase
+              .from("warming_pipeline_executions")
+              .insert({
+                pipeline_account_id: pipelineAccountData.id,
+                post_id: post.id,
+                success: false,
+                error_message: postError.message || "Erro desconhecido",
+              });
           } else {
             console.log(`   ✅ Post ${post.post_order} executado com sucesso`);
+            
+            // Registrar sucesso
+            await supabase
+              .from("warming_pipeline_executions")
+              .insert({
+                pipeline_account_id: pipelineAccountData.id,
+                post_id: post.id,
+                success: true,
+              });
           }
         } catch (error) {
           console.error(`   ❌ Erro ao executar post:`, error);
@@ -228,23 +257,42 @@ Deno.serve(async (req) => {
 });
 
 async function checkAndAdvanceDay(supabase: any, warmingAccount: any) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+  // Buscar o dia atual
   const { data: currentDay } = await supabase
     .from("warming_pipeline_days")
-    .select("posts_count")
+    .select("id, posts_count")
     .eq("pipeline_id", warmingAccount.pipeline_id)
     .eq("day_number", warmingAccount.current_day)
     .single();
 
-  const { data: executedToday } = await supabase
-    .from("post_history")
+  if (!currentDay) return;
+
+  // Buscar todos os posts deste dia
+  const { data: dayPosts } = await supabase
+    .from("warming_pipeline_posts")
+    .select("id")
+    .eq("day_id", currentDay.id);
+
+  if (!dayPosts || dayPosts.length === 0) return;
+
+  // Buscar ID do warming_pipeline_account
+  const { data: pipelineAccountData } = await supabase
+    .from("warming_pipeline_accounts")
     .select("id")
     .eq("account_id", warmingAccount.account_id)
-    .gte("posted_at", today.toISOString());
+    .eq("pipeline_id", warmingAccount.pipeline_id)
+    .single();
 
-  const executedCount = executedToday?.length || 0;
+  if (!pipelineAccountData) return;
+
+  // Verificar quantos posts foram executados
+  const { data: executedPosts } = await supabase
+    .from("warming_pipeline_executions")
+    .select("id")
+    .eq("pipeline_account_id", pipelineAccountData.id)
+    .in("post_id", dayPosts.map((p: any) => p.id));
+
+  const executedCount = executedPosts?.length || 0;
 
   // Se todos os posts do dia foram executados
   if (executedCount >= (currentDay?.posts_count || 0)) {

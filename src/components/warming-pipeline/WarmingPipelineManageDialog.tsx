@@ -38,38 +38,42 @@ export const WarmingPipelineManageDialog = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: pipelineData, error: pipelineError } = await supabase
-        .from("warming_pipelines")
-        .select("*")
-        .eq("id", pipelineId)
-        .eq("user_id", user.id)
-        .single();
+      // Carregar todos os dados em paralelo para melhor performance
+      const [pipelineResult, daysResult, accountsResult] = await Promise.all([
+        supabase
+          .from("warming_pipelines")
+          .select("*")
+          .eq("id", pipelineId)
+          .eq("user_id", user.id)
+          .single(),
+        supabase
+          .from("warming_pipeline_days")
+          .select(`
+            id,
+            day_number,
+            posts_count,
+            warming_pipeline_posts(*)
+          `)
+          .eq("pipeline_id", pipelineId)
+          .order("day_number"),
+        supabase
+          .from("warming_pipeline_accounts")
+          .select(`
+            id,
+            status,
+            current_day,
+            threads_accounts(username, profile_picture_url)
+          `)
+          .eq("pipeline_id", pipelineId)
+      ]);
 
-      if (pipelineError) throw pipelineError;
-      setPipeline(pipelineData);
+      if (pipelineResult.error) throw pipelineResult.error;
+      if (daysResult.error) throw daysResult.error;
+      if (accountsResult.error) throw accountsResult.error;
 
-      const { data: daysData, error: daysError } = await supabase
-        .from("warming_pipeline_days")
-        .select(`
-          *,
-          warming_pipeline_posts(*)
-        `)
-        .eq("pipeline_id", pipelineId)
-        .order("day_number");
-
-      if (daysError) throw daysError;
-      setDays(daysData || []);
-
-      const { data: accountsData, error: accountsError } = await supabase
-        .from("warming_pipeline_accounts")
-        .select(`
-          *,
-          threads_accounts(username, profile_picture_url)
-        `)
-        .eq("pipeline_id", pipelineId);
-
-      if (accountsError) throw accountsError;
-      setAccounts(accountsData || []);
+      setPipeline(pipelineResult.data);
+      setDays(daysResult.data || []);
+      setAccounts(accountsResult.data || []);
 
     } catch (error: any) {
       console.error("Erro ao carregar esteira:", error);
