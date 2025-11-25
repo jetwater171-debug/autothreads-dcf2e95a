@@ -27,6 +27,10 @@ import {
   Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { WarmingStatusBadge } from "./WarmingStatusBadge";
+import { WarmingAccountDialog } from "./WarmingAccountDialog";
+import { useAccountWarmingStatus } from "@/hooks/useAccountWarmingStatus";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ThreadsAccount {
   id: string;
@@ -134,6 +138,10 @@ export function PeriodicPostWizard({
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showWarmingDialog, setShowWarmingDialog] = useState(false);
+  const [pendingAccountId, setPendingAccountId] = useState("");
+
+  const { statuses: warmingStatuses } = useAccountWarmingStatus(accounts.map(a => a.id));
 
   // Form state
   const [title, setTitle] = useState(initialData?.title || "");
@@ -182,6 +190,32 @@ export function PeriodicPostWizard({
   const handleNavigateToAdd = (type: 'phrases' | 'images' | 'campaigns') => {
     if (onNavigateToAddContent) {
       onNavigateToAddContent(type, getCurrentWizardData(), currentStep);
+    }
+  };
+
+  const handleAccountChange = (accountId: string) => {
+    const status = warmingStatuses[accountId];
+    
+    if (status?.status === "warming") {
+      setPendingAccountId(accountId);
+      setShowWarmingDialog(true);
+    } else {
+      setSelectedAccount(accountId);
+    }
+  };
+
+  const handleStopWarming = async () => {
+    try {
+      await supabase
+        .from("warming_pipeline_accounts")
+        .update({ status: "cancelled" })
+        .eq("account_id", pendingAccountId)
+        .eq("status", "warming");
+
+      setSelectedAccount(pendingAccountId);
+      setShowWarmingDialog(false);
+    } catch (error) {
+      console.error("Error stopping warming:", error);
     }
   };
 
@@ -393,7 +427,7 @@ export function PeriodicPostWizard({
                     <Label htmlFor="account" className="text-base font-semibold">
                       Conta do Threads
                     </Label>
-                    <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                    <Select value={selectedAccount} onValueChange={handleAccountChange}>
                       <SelectTrigger className={cn("h-12", errors.account && "border-destructive")}>
                         <SelectValue placeholder="Selecione uma conta">
                           {selectedAccount && accounts.find(a => a.id === selectedAccount) && (
@@ -407,6 +441,11 @@ export function PeriodicPostWizard({
                                 </AvatarFallback>
                               </Avatar>
                               <span>{accounts.find(a => a.id === selectedAccount)?.username}</span>
+                              <WarmingStatusBadge 
+                                status={warmingStatuses[selectedAccount]?.status || "not_warmed"} 
+                                showIcon={false}
+                                className="ml-auto"
+                              />
                             </div>
                           )}
                         </SelectValue>
@@ -414,14 +453,20 @@ export function PeriodicPostWizard({
                       <SelectContent>
                         {accounts.map((account) => (
                           <SelectItem key={account.id} value={account.id}>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-5 w-5">
-                                <AvatarImage src={account.profile_picture_url || undefined} />
-                                <AvatarFallback className="text-xs">
-                                  {account.username?.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              {account.username || account.account_id}
+                            <div className="flex items-center gap-2 justify-between w-full">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={account.profile_picture_url || undefined} />
+                                  <AvatarFallback className="text-xs">
+                                    {account.username?.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {account.username || account.account_id}
+                              </div>
+                              <WarmingStatusBadge 
+                                status={warmingStatuses[account.id]?.status || "not_warmed"} 
+                                showIcon={false}
+                              />
                             </div>
                           </SelectItem>
                         ))}
@@ -1253,6 +1298,17 @@ export function PeriodicPostWizard({
           )}
         </div>
       </div>
+
+      <WarmingAccountDialog
+        open={showWarmingDialog}
+        onOpenChange={setShowWarmingDialog}
+        daysRemaining={warmingStatuses[pendingAccountId]?.daysRemaining}
+        onConfirm={handleStopWarming}
+        onCancel={() => {
+          setShowWarmingDialog(false);
+          setPendingAccountId("");
+        }}
+      />
       </div>
     </TooltipProvider>
   );

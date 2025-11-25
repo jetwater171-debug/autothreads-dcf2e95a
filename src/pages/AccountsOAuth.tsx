@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { WarmingStatusBadge } from "@/components/WarmingStatusBadge";
+import { useAccountWarmingStatus } from "@/hooks/useAccountWarmingStatus";
 
 interface ThreadsAccount {
   id: string;
@@ -35,6 +37,8 @@ const AccountsOAuth = () => {
   const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const { statuses: warmingStatuses } = useAccountWarmingStatus(accounts.map(a => a.id));
 
   const getTimeUntilExpiration = (expiresAt: string | null) => {
     if (!expiresAt) return { text: 'Desconhecido', color: 'text-muted-foreground', urgent: false };
@@ -400,12 +404,13 @@ const AccountsOAuth = () => {
                         <AvatarFallback className="text-lg">{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <CardTitle className="text-lg">
+                        <CardTitle className="text-lg flex items-center gap-2">
                           {account.username || "Conta Threads"}
                         </CardTitle>
                         <CardDescription className="text-xs">ID: {account.account_id}</CardDescription>
                       </div>
                     </div>
+                    <WarmingStatusBadge status={warmingStatuses[account.id]?.status || "not_warmed"} />
                   </div>
                 </CardHeader>
                 

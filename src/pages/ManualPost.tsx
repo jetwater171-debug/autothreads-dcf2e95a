@@ -11,6 +11,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Loader2, X, Upload } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { WarmingStatusBadge } from "@/components/WarmingStatusBadge";
+import { WarmingAccountDialog } from "@/components/WarmingAccountDialog";
+import { useAccountWarmingStatus } from "@/hooks/useAccountWarmingStatus";
 
 interface ThreadsAccount {
   id: string;
@@ -27,8 +30,12 @@ const ManualPost = () => {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showWarmingDialog, setShowWarmingDialog] = useState(false);
+  const [pendingAccountId, setPendingAccountId] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const { statuses: warmingStatuses } = useAccountWarmingStatus(accounts.map(a => a.id));
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -140,6 +147,42 @@ const ManualPost = () => {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleAccountChange = async (accountId: string) => {
+    const status = warmingStatuses[accountId];
+    
+    if (status?.status === "warming") {
+      setPendingAccountId(accountId);
+      setShowWarmingDialog(true);
+    } else {
+      setSelectedAccount(accountId);
+    }
+  };
+
+  const handleStopWarming = async () => {
+    try {
+      // Parar a esteira de aquecimento
+      await supabase
+        .from("warming_pipeline_accounts")
+        .update({ status: "cancelled" })
+        .eq("account_id", pendingAccountId)
+        .eq("status", "warming");
+
+      setSelectedAccount(pendingAccountId);
+      setShowWarmingDialog(false);
+      
+      toast({
+        title: "Esteira interrompida",
+        description: "A conta está disponível para uso",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message,
+      });
+    }
+  };
+
   const handlePost = async () => {
     // Validações
     if (postType === 'text' && !text.trim()) {
@@ -232,24 +275,45 @@ const ManualPost = () => {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="account">Conta do Threads</Label>
-              <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                <SelectTrigger id="account">
-                  <SelectValue placeholder="Selecione uma conta" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={account.profile_picture_url || undefined} alt={account.username || "Profile"} />
-                          <AvatarFallback>{account.username?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
-                        </Avatar>
-                        {account.username || account.account_id}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    <Select value={selectedAccount} onValueChange={handleAccountChange}>
+                      <SelectTrigger id="account">
+                        <SelectValue placeholder="Selecione uma conta">
+                          {selectedAccount && accounts.find(a => a.id === selectedAccount) && (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={accounts.find(a => a.id === selectedAccount)?.profile_picture_url || undefined} />
+                                <AvatarFallback>{accounts.find(a => a.id === selectedAccount)?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <span>{accounts.find(a => a.id === selectedAccount)?.username}</span>
+                              <WarmingStatusBadge 
+                                status={warmingStatuses[selectedAccount]?.status || "not_warmed"} 
+                                showIcon={false}
+                                className="ml-auto"
+                              />
+                            </div>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            <div className="flex items-center gap-2 justify-between w-full">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={account.profile_picture_url || undefined} />
+                                  <AvatarFallback className="text-xs">{account.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                {account.username || account.account_id}
+                              </div>
+                              <WarmingStatusBadge 
+                                status={warmingStatuses[account.id]?.status || "not_warmed"} 
+                                showIcon={false}
+                              />
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
             </div>
 
             <div className="space-y-2">
@@ -401,6 +465,17 @@ const ManualPost = () => {
           </CardContent>
         </Card>
       </div>
+
+      <WarmingAccountDialog
+        open={showWarmingDialog}
+        onOpenChange={setShowWarmingDialog}
+        daysRemaining={warmingStatuses[pendingAccountId]?.daysRemaining}
+        onConfirm={handleStopWarming}
+        onCancel={() => {
+          setShowWarmingDialog(false);
+          setPendingAccountId("");
+        }}
+      />
     </Layout>
   );
 };
