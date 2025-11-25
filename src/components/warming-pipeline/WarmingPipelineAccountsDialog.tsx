@@ -45,22 +45,24 @@ export const WarmingPipelineAccountsDialog = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: accountsData, error: accountsError } = await supabase
-        .from("threads_accounts")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("is_active", true);
+      // Carregar contas e dados linkados em paralelo para melhor performance
+      const [accountsResult, linkedResult] = await Promise.all([
+        supabase
+          .from("threads_accounts")
+          .select("id, username, profile_picture_url, account_id")
+          .eq("user_id", user.id)
+          .eq("is_active", true),
+        supabase
+          .from("warming_pipeline_accounts")
+          .select("account_id")
+          .eq("pipeline_id", pipelineId)
+      ]);
 
-      if (accountsError) throw accountsError;
-      setAccounts(accountsData || []);
-
-      const { data: linkedData, error: linkedError } = await supabase
-        .from("warming_pipeline_accounts")
-        .select("account_id")
-        .eq("pipeline_id", pipelineId);
-
-      if (linkedError) throw linkedError;
-      const linked = linkedData?.map(l => l.account_id) || [];
+      if (accountsResult.error) throw accountsResult.error;
+      if (linkedResult.error) throw linkedResult.error;
+      
+      setAccounts(accountsResult.data || []);
+      const linked = linkedResult.data?.map(l => l.account_id) || [];
       setLinkedAccounts(linked);
       setSelectedAccounts(linked);
 

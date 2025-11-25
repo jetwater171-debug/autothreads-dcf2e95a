@@ -505,6 +505,51 @@ export type Database = {
           },
         ]
       }
+      warming_pipeline_executions: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          executed_at: string
+          id: string
+          pipeline_account_id: string
+          post_id: string
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          pipeline_account_id: string
+          post_id: string
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          pipeline_account_id?: string
+          post_id?: string
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warming_pipeline_executions_pipeline_account_id_fkey"
+            columns: ["pipeline_account_id"]
+            isOneToOne: false
+            referencedRelation: "warming_pipeline_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warming_pipeline_executions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "warming_pipeline_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warming_pipeline_posts: {
         Row: {
           carousel_image_ids: string[] | null
