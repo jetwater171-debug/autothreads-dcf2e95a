@@ -150,15 +150,22 @@ export const WarmingPipelineStep3 = ({ data, onBack, onComplete }: WarmingPipeli
             {day.posts.length > 0 && (
               <div className="space-y-2">
                 {day.posts.map((post) => (
-                  <div key={post.postOrder} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-muted/30">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{post.scheduledTime}</span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="capitalize">{post.postType.replace("_", " + ")}</span>
-                    {post.useIntelligentDelay && (
-                      <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                        Delay inteligente
-                      </span>
+                  <div key={post.postOrder} className="space-y-1">
+                    <div className="flex items-center gap-3 text-sm p-2 rounded-lg bg-muted/30">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{post.scheduledTime}</span>
+                      <span className="text-muted-foreground">•</span>
+                      <span className="capitalize">{post.postType.replace("_", " + ")}</span>
+                      {post.useIntelligentDelay && (
+                        <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                          Delay inteligente
+                        </span>
+                      )}
+                    </div>
+                    {post.customText && (
+                      <div className="pl-7 text-xs text-muted-foreground italic">
+                        "{post.customText.substring(0, 100)}{post.customText.length > 100 ? "..." : ""}"
+                      </div>
                     )}
                   </div>
                 ))}
