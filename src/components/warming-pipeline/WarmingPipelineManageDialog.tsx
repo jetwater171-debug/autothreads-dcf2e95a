@@ -138,15 +138,22 @@ export const WarmingPipelineManageDialog = ({
                   {day.warming_pipeline_posts && day.warming_pipeline_posts.length > 0 && (
                     <div className="space-y-2">
                       {day.warming_pipeline_posts.map((post: any) => (
-                        <div key={post.id} className="flex items-center gap-2 text-xs p-2 rounded-lg bg-muted/30">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium">{post.scheduled_time.substring(0, 5)}</span>
-                          <span className="text-muted-foreground">•</span>
-                          <span className="capitalize">{post.post_type.replace("_", " + ")}</span>
-                          {post.use_intelligent_delay && (
-                            <Badge variant="secondary" className="ml-auto text-xs">
-                              Delay
-                            </Badge>
+                        <div key={post.id} className="space-y-1">
+                          <div className="flex items-center gap-2 text-xs p-2 rounded-lg bg-muted/30">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="font-medium">{post.scheduled_time.substring(0, 5)}</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="capitalize">{post.post_type.replace("_", " + ")}</span>
+                            {post.use_intelligent_delay && (
+                              <Badge variant="secondary" className="ml-auto text-xs">
+                                Delay
+                              </Badge>
+                            )}
+                          </div>
+                          {post.custom_text && (
+                            <div className="pl-5 text-xs text-muted-foreground italic">
+                              "{post.custom_text.substring(0, 80)}{post.custom_text.length > 80 ? "..." : ""}"
+                            </div>
                           )}
                         </div>
                       ))}
