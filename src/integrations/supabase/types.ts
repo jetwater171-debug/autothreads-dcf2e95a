@@ -419,6 +419,209 @@ export type Database = {
         }
         Relationships: []
       }
+      warming_pipeline_accounts: {
+        Row: {
+          account_id: string
+          completed_at: string | null
+          created_at: string
+          current_day: number
+          id: string
+          paused_automations: Json | null
+          pipeline_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          completed_at?: string | null
+          created_at?: string
+          current_day?: number
+          id?: string
+          paused_automations?: Json | null
+          pipeline_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          completed_at?: string | null
+          created_at?: string
+          current_day?: number
+          id?: string
+          paused_automations?: Json | null
+          pipeline_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warming_pipeline_accounts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "threads_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warming_pipeline_accounts_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "warming_pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warming_pipeline_days: {
+        Row: {
+          created_at: string
+          day_number: number
+          id: string
+          pipeline_id: string
+          posts_count: number
+        }
+        Insert: {
+          created_at?: string
+          day_number: number
+          id?: string
+          pipeline_id: string
+          posts_count?: number
+        }
+        Update: {
+          created_at?: string
+          day_number?: number
+          id?: string
+          pipeline_id?: string
+          posts_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warming_pipeline_days_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "warming_pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warming_pipeline_posts: {
+        Row: {
+          carousel_image_ids: string[] | null
+          created_at: string
+          day_id: string
+          id: string
+          image_mode: string | null
+          post_order: number
+          post_type: string
+          random_image_folder_id: string | null
+          random_phrase_folder_id: string | null
+          scheduled_time: string
+          specific_image_id: string | null
+          specific_phrase_id: string | null
+          text_mode: string | null
+          use_intelligent_delay: boolean
+        }
+        Insert: {
+          carousel_image_ids?: string[] | null
+          created_at?: string
+          day_id: string
+          id?: string
+          image_mode?: string | null
+          post_order: number
+          post_type: string
+          random_image_folder_id?: string | null
+          random_phrase_folder_id?: string | null
+          scheduled_time: string
+          specific_image_id?: string | null
+          specific_phrase_id?: string | null
+          text_mode?: string | null
+          use_intelligent_delay?: boolean
+        }
+        Update: {
+          carousel_image_ids?: string[] | null
+          created_at?: string
+          day_id?: string
+          id?: string
+          image_mode?: string | null
+          post_order?: number
+          post_type?: string
+          random_image_folder_id?: string | null
+          random_phrase_folder_id?: string | null
+          scheduled_time?: string
+          specific_image_id?: string | null
+          specific_phrase_id?: string | null
+          text_mode?: string | null
+          use_intelligent_delay?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warming_pipeline_posts_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "warming_pipeline_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warming_pipeline_posts_random_image_folder_id_fkey"
+            columns: ["random_image_folder_id"]
+            isOneToOne: false
+            referencedRelation: "content_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warming_pipeline_posts_random_phrase_folder_id_fkey"
+            columns: ["random_phrase_folder_id"]
+            isOneToOne: false
+            referencedRelation: "content_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warming_pipeline_posts_specific_image_id_fkey"
+            columns: ["specific_image_id"]
+            isOneToOne: false
+            referencedRelation: "images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warming_pipeline_posts_specific_phrase_id_fkey"
+            columns: ["specific_phrase_id"]
+            isOneToOne: false
+            referencedRelation: "phrases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warming_pipelines: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          status: string
+          total_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          status?: string
+          total_days: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string
+          total_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
