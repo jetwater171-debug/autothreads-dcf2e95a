@@ -73,9 +73,12 @@ Deno.serve(async (req) => {
         let text = null;
         const imageUrls: string[] = [];
 
-        // Get text content
+        // Get text content - priority: custom_text > random phrase > specific phrase
         if (['text', 'text_image', 'carousel'].includes(dayPost.content_type)) {
-          if (dayPost.use_random_phrase) {
+          // First check for custom text (direct input from user)
+          if (dayPost.custom_text) {
+            text = dayPost.custom_text;
+          } else if (dayPost.use_random_phrase) {
             let query = supabase
               .from('phrases')
               .select('content')
