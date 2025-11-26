@@ -112,15 +112,14 @@ const AccountsOAuth = () => {
 
   const handleOAuthConnect = () => {
     const threadsAppId = import.meta.env.VITE_THREADS_APP_ID;
-    const threadsRedirectUri = import.meta.env.VITE_THREADS_REDIRECT_URI || 
-      `${window.location.origin}/auth/threads/callback`;
+    const threadsRedirectUri = import.meta.env.VITE_THREADS_REDIRECT_URI;
     const scope = "threads_basic,threads_content_publish,threads_manage_insights";
 
-    if (!threadsAppId) {
+    if (!threadsAppId || !threadsRedirectUri) {
       toast({
         variant: "destructive",
         title: "Erro de configuração",
-        description: "ID do aplicativo Threads não configurado.",
+        description: "Credenciais do Threads não configuradas.",
       });
       return;
     }
