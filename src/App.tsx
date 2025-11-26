@@ -29,7 +29,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/threads/callback" element={<ThreadsCallback />} />
+          <Route path="/auth/callback" element={<ThreadsCallback />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/accounts" element={<AccountsOAuth />} />
           <Route path="/phrases" element={<Phrases />} />
