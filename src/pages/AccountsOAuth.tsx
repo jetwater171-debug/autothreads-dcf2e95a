@@ -113,7 +113,7 @@ const AccountsOAuth = () => {
   const handleOAuthConnect = () => {
     const threadsAppId = import.meta.env.VITE_THREADS_APP_ID;
     const threadsRedirectUri = import.meta.env.VITE_THREADS_REDIRECT_URI;
-    const scope = "threads_basic,threads_content_publish,threads_manage_insights";
+    const scope = "threads_basic,threads_content_publish,threads_read_replies,threads_manage_replies,threads_manage_insights";
 
     if (!threadsAppId || !threadsRedirectUri) {
       toast({
