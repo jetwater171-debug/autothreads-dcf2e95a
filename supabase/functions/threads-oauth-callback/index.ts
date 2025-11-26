@@ -27,22 +27,26 @@ Deno.serve(async (req) => {
 
     // Trocar código por token de curta duração
     console.log('Trocando código por token de acesso...');
-    
-    // Montar parâmetros no corpo da requisição (não na URL)
-    const tokenParams = new URLSearchParams({
+    console.log('Parâmetros:', {
       client_id: threadsAppId,
-      client_secret: threadsAppSecret,
+      client_secret: `${threadsAppSecret.substring(0, 4)}...${threadsAppSecret.substring(threadsAppSecret.length - 4)}`,
       grant_type: 'authorization_code',
       redirect_uri: threadsRedirectUri,
-      code: code
+      code: `${code.substring(0, 10)}...`
     });
+    
+    // Usar FormData conforme documentação oficial do Threads
+    const formData = new FormData();
+    formData.append('client_id', threadsAppId);
+    formData.append('client_secret', threadsAppSecret);
+    formData.append('grant_type', 'authorization_code');
+    formData.append('redirect_uri', threadsRedirectUri);
+    formData.append('code', code);
     
     const tokenResponse = await fetch('https://graph.threads.net/oauth/access_token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: tokenParams.toString()
+      body: formData
+      // Não definir Content-Type - o fetch define automaticamente para multipart/form-data
     });
 
     if (!tokenResponse.ok) {
