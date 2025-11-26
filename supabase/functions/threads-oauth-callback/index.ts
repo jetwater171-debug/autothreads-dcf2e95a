@@ -27,20 +27,23 @@ Deno.serve(async (req) => {
 
     // Trocar código por token de curta duração
     console.log('Trocando código por token de acesso...');
-    const tokenResponse = await fetch(
-      `https://graph.threads.net/oauth/access_token?` +
-      `client_id=${threadsAppId}` +
-      `&client_secret=${threadsAppSecret}` +
-      `&grant_type=authorization_code` +
-      `&redirect_uri=${encodeURIComponent(threadsRedirectUri)}` +
-      `&code=${code}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
+    
+    // Montar parâmetros no corpo da requisição (não na URL)
+    const tokenParams = new URLSearchParams({
+      client_id: threadsAppId,
+      client_secret: threadsAppSecret,
+      grant_type: 'authorization_code',
+      redirect_uri: threadsRedirectUri,
+      code: code
+    });
+    
+    const tokenResponse = await fetch('https://graph.threads.net/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: tokenParams.toString()
+    });
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
