@@ -6,6 +6,7 @@ import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon,
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useEffect, useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -45,43 +46,54 @@ const Layout = ({
   const navItems = [{
     path: "/dashboard",
     label: "Dashboard",
-    icon: LayoutDashboard
+    icon: LayoutDashboard,
+    disabled: false
   }, {
     path: "/accounts",
     label: "Contas",
-    icon: Sparkles
+    icon: Sparkles,
+    disabled: false
   }, {
     path: "/phrases",
     label: "Frases",
-    icon: MessageSquare
+    icon: MessageSquare,
+    disabled: false
   }, {
     path: "/images",
     label: "Imagens",
-    icon: ImageIcon
+    icon: ImageIcon,
+    disabled: false
   }, {
     path: "/warming-pipeline",
     label: "Esteira de Aquecimento",
-    icon: Flame
+    icon: Flame,
+    disabled: false
   }, {
     path: "/periodic-posts",
     label: "Posts Periódicos",
-    icon: Calendar
+    icon: Calendar,
+    disabled: false
   }, {
     path: "/campaigns",
     label: "Campanhas",
-    icon: Megaphone
+    icon: Megaphone,
+    disabled: false
   }, {
     path: "/manual-post",
     label: "Post Manual",
-    icon: Send
+    icon: Send,
+    disabled: false
   }, {
     path: "/analytics",
     label: "Analytics",
-    icon: TrendingUp
+    icon: TrendingUp,
+    disabled: true,
+    maintenanceMessage: "Funcionalidade em manutenção"
   }, {
     path: "/post-history",
     label: "Histórico",
-    icon: History
+    icon: History,
+    disabled: false
   }];
   return <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
@@ -99,32 +111,59 @@ const Layout = ({
           </div>
           
           <nav className="space-y-2 flex-1">
-            {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return <Link key={item.path} to={item.path} className="block">
+            <TooltipProvider>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                
+                const buttonContent = (
                   <Button 
                     variant="ghost" 
+                    disabled={item.disabled}
                     className={cn(
                       "w-full justify-start relative overflow-hidden transition-all duration-300 rounded-xl h-12 font-medium",
                       "hover:bg-primary/10 hover:shadow-lg hover:shadow-primary/20 group text-[14px]",
-                      isActive && "bg-primary/15 text-primary shadow-lg shadow-primary/30 border border-primary/30"
+                      isActive && "bg-primary/15 text-primary shadow-lg shadow-primary/30 border border-primary/30",
+                      item.disabled && "opacity-50 cursor-not-allowed hover:bg-transparent hover:shadow-none"
                     )}
                   >
                     <Icon className={cn(
                       "mr-3 h-5 w-5 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]", 
-                      isActive && "text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+                      isActive && "text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]",
+                      item.disabled && "group-hover:scale-100 group-hover:drop-shadow-none"
                     )} />
                     <span className="relative z-10">{item.label}</span>
-                    {isActive && (
+                    {isActive && !item.disabled && (
                       <>
                         <div className="absolute inset-0 bg-gradient-to-r from-primary/15 via-primary/5 to-transparent" />
                         <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary rounded-l-full shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
                       </>
                     )}
                   </Button>
-                </Link>;
-          })}
+                );
+
+                if (item.disabled) {
+                  return (
+                    <Tooltip key={item.path}>
+                      <TooltipTrigger asChild>
+                        <div className="block">
+                          {buttonContent}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>{item.maintenanceMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return (
+                  <Link key={item.path} to={item.path} className="block">
+                    {buttonContent}
+                  </Link>
+                );
+              })}
+            </TooltipProvider>
           </nav>
           
           <div className="pt-6 space-y-2 border-t border-border/50 mt-auto">
