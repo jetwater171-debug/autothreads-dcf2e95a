@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     console.log('🔄 Iniciando troca de código por token...');
     console.log('📋 Endpoint:', 'https://graph.threads.net/oauth/access_token');
     console.log('📋 client_id:', threadsAppId);
-    console.log('📋 client_secret:', `${threadsAppSecret.substring(0, 4)}...${threadsAppSecret.substring(threadsAppSecret.length - 4)}`);
+    console.log('📋 client_secret:', threadsAppSecret);
     console.log('📋 redirect_uri:', threadsRedirectUri);
     console.log('📋 code (primeiros 10 chars):', code.substring(0, 10));
     console.log('📋 grant_type:', 'authorization_code');
