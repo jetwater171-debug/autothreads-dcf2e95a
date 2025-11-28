@@ -383,11 +383,11 @@ export default function Posts() {
                         <CardContent className="p-0 flex-1 flex flex-col">
                           {/* Preview de imagens */}
                           {post.image_urls.length > 0 && (
-                            <div className="relative w-full aspect-[4/3] bg-muted/30">
+                            <div className="relative w-full h-40 bg-muted/30 flex items-center justify-center">
                               <img
                                 src={post.image_urls[0]}
                                 alt=""
-                                className="w-full h-full object-cover"
+                                className="max-w-full max-h-full object-contain"
                               />
                               {post.image_urls.length > 1 && (
                                 <div className="absolute top-2 right-2 bg-background/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-semibold shadow-lg border border-border/50">
