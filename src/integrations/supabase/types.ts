@@ -130,55 +130,10 @@ export type Database = {
         }
         Relationships: []
       }
-      images: {
-        Row: {
-          alt_text: string | null
-          created_at: string | null
-          file_name: string
-          file_path: string
-          folder_id: string | null
-          id: string
-          public_url: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          alt_text?: string | null
-          created_at?: string | null
-          file_name: string
-          file_path: string
-          folder_id?: string | null
-          id?: string
-          public_url: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          alt_text?: string | null
-          created_at?: string | null
-          file_name?: string
-          file_path?: string
-          folder_id?: string | null
-          id?: string
-          public_url?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "images_folder_id_fkey"
-            columns: ["folder_id"]
-            isOneToOne: false
-            referencedRelation: "content_folders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       periodic_posts: {
         Row: {
           account_id: string
           campaign_id: string | null
-          carousel_image_ids: string[] | null
           created_at: string | null
           id: string
           interval_minutes: number
@@ -186,20 +141,14 @@ export type Database = {
           last_posted_at: string | null
           post_id: string | null
           post_type: string | null
-          random_phrase_folder_id: string | null
-          specific_image_id: string | null
-          specific_phrase_id: string | null
           title: string
           updated_at: string | null
           use_intelligent_delay: boolean | null
-          use_random_image: boolean | null
-          use_random_phrase: boolean | null
           user_id: string
         }
         Insert: {
           account_id: string
           campaign_id?: string | null
-          carousel_image_ids?: string[] | null
           created_at?: string | null
           id?: string
           interval_minutes: number
@@ -207,20 +156,14 @@ export type Database = {
           last_posted_at?: string | null
           post_id?: string | null
           post_type?: string | null
-          random_phrase_folder_id?: string | null
-          specific_image_id?: string | null
-          specific_phrase_id?: string | null
           title?: string
           updated_at?: string | null
           use_intelligent_delay?: boolean | null
-          use_random_image?: boolean | null
-          use_random_phrase?: boolean | null
           user_id: string
         }
         Update: {
           account_id?: string
           campaign_id?: string | null
-          carousel_image_ids?: string[] | null
           created_at?: string | null
           id?: string
           interval_minutes?: number
@@ -228,14 +171,9 @@ export type Database = {
           last_posted_at?: string | null
           post_id?: string | null
           post_type?: string | null
-          random_phrase_folder_id?: string | null
-          specific_image_id?: string | null
-          specific_phrase_id?: string | null
           title?: string
           updated_at?: string | null
           use_intelligent_delay?: boolean | null
-          use_random_image?: boolean | null
-          use_random_phrase?: boolean | null
           user_id?: string
         }
         Relationships: [
@@ -260,62 +198,6 @@ export type Database = {
             referencedRelation: "posts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "periodic_posts_random_phrase_folder_id_fkey"
-            columns: ["random_phrase_folder_id"]
-            isOneToOne: false
-            referencedRelation: "content_folders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "periodic_posts_specific_image_id_fkey"
-            columns: ["specific_image_id"]
-            isOneToOne: false
-            referencedRelation: "images"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "periodic_posts_specific_phrase_id_fkey"
-            columns: ["specific_phrase_id"]
-            isOneToOne: false
-            referencedRelation: "phrases"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      phrases: {
-        Row: {
-          content: string
-          created_at: string | null
-          folder_id: string | null
-          id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          folder_id?: string | null
-          id?: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          folder_id?: string | null
-          id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "phrases_folder_id_fkey"
-            columns: ["folder_id"]
-            isOneToOne: false
-            referencedRelation: "content_folders"
-            referencedColumns: ["id"]
-          },
         ]
       }
       post_history: {
@@ -329,7 +211,6 @@ export type Database = {
           error_message: string | null
           id: string
           image_urls: string[] | null
-          phrase_id: string | null
           post_type: string | null
           posted_at: string
           threads_post_id: string | null
@@ -346,7 +227,6 @@ export type Database = {
           error_message?: string | null
           id?: string
           image_urls?: string[] | null
-          phrase_id?: string | null
           post_type?: string | null
           posted_at?: string
           threads_post_id?: string | null
@@ -363,7 +243,6 @@ export type Database = {
           error_message?: string | null
           id?: string
           image_urls?: string[] | null
-          phrase_id?: string | null
           post_type?: string | null
           posted_at?: string
           threads_post_id?: string | null
@@ -376,13 +255,6 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "threads_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "post_history_phrase_id_fkey"
-            columns: ["phrase_id"]
-            isOneToOne: false
-            referencedRelation: "phrases"
             referencedColumns: ["id"]
           },
           {
@@ -486,45 +358,6 @@ export type Database = {
           },
         ]
       }
-      warmup_day_post_carousel_images: {
-        Row: {
-          created_at: string
-          day_post_id: string
-          id: string
-          image_id: string
-          position: number
-        }
-        Insert: {
-          created_at?: string
-          day_post_id: string
-          id?: string
-          image_id: string
-          position: number
-        }
-        Update: {
-          created_at?: string
-          day_post_id?: string
-          id?: string
-          image_id?: string
-          position?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "warmup_day_post_carousel_images_day_post_id_fkey"
-            columns: ["day_post_id"]
-            isOneToOne: false
-            referencedRelation: "warmup_day_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_day_post_carousel_images_image_id_fkey"
-            columns: ["image_id"]
-            isOneToOne: false
-            referencedRelation: "images"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       warmup_day_posts: {
         Row: {
           content_type: string
@@ -535,13 +368,7 @@ export type Database = {
           intelligent_delay: boolean
           order_index: number
           post_id: string | null
-          random_image_folder_id: string | null
-          random_phrase_folder_id: string | null
-          specific_image_id: string | null
-          specific_phrase_id: string | null
           time_of_day: string
-          use_random_image: boolean
-          use_random_phrase: boolean
         }
         Insert: {
           content_type: string
@@ -552,13 +379,7 @@ export type Database = {
           intelligent_delay?: boolean
           order_index: number
           post_id?: string | null
-          random_image_folder_id?: string | null
-          random_phrase_folder_id?: string | null
-          specific_image_id?: string | null
-          specific_phrase_id?: string | null
           time_of_day: string
-          use_random_image?: boolean
-          use_random_phrase?: boolean
         }
         Update: {
           content_type?: string
@@ -569,13 +390,7 @@ export type Database = {
           intelligent_delay?: boolean
           order_index?: number
           post_id?: string | null
-          random_image_folder_id?: string | null
-          random_phrase_folder_id?: string | null
-          specific_image_id?: string | null
-          specific_phrase_id?: string | null
           time_of_day?: string
-          use_random_image?: boolean
-          use_random_phrase?: boolean
         }
         Relationships: [
           {
@@ -590,34 +405,6 @@ export type Database = {
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_day_posts_random_image_folder_id_fkey"
-            columns: ["random_image_folder_id"]
-            isOneToOne: false
-            referencedRelation: "content_folders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_day_posts_random_phrase_folder_id_fkey"
-            columns: ["random_phrase_folder_id"]
-            isOneToOne: false
-            referencedRelation: "content_folders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_day_posts_specific_image_id_fkey"
-            columns: ["specific_image_id"]
-            isOneToOne: false
-            referencedRelation: "images"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warmup_day_posts_specific_phrase_id_fkey"
-            columns: ["specific_phrase_id"]
-            isOneToOne: false
-            referencedRelation: "phrases"
             referencedColumns: ["id"]
           },
         ]
