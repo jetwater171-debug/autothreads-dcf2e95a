@@ -273,7 +273,7 @@ const Images = () => {
   };
 
   const filteredImages = selectedFolder === null 
-    ? images 
+    ? images.filter(img => img.folder_id === null)
     : images.filter(img => img.folder_id === selectedFolder);
 
   const handleDragStart = (event: DragStartEvent) => {

@@ -215,7 +215,7 @@ const Phrases = () => {
   };
 
   const filteredPhrases = selectedFolder === null 
-    ? phrases 
+    ? phrases.filter(p => p.folder_id === null)
     : phrases.filter(p => p.folder_id === selectedFolder);
 
   const handleDragStart = (event: DragStartEvent) => {
