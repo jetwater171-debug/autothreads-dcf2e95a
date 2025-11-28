@@ -41,6 +41,10 @@ const PostHistory = () => {
 
   const loadPostHistory = async () => {
     try {
+      // Pegar apenas posts de hoje
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       const { data, error } = await supabase
         .from("post_history")
         .select(`
@@ -53,6 +57,7 @@ const PostHistory = () => {
           image_urls,
           threads_accounts!post_history_account_id_fkey (username, profile_picture_url)
         `)
+        .gte("posted_at", today.toISOString())
         .order("posted_at", { ascending: false });
 
       if (error) throw error;
@@ -107,10 +112,10 @@ const PostHistory = () => {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Histórico de Posts
+            Histórico de Hoje
           </h1>
           <p className="text-muted-foreground mt-2 text-base">
-            Todos os posts realizados e tentativas de publicação
+            Posts realizados e tentativas de publicação de hoje
           </p>
         </div>
 
@@ -121,7 +126,7 @@ const PostHistory = () => {
               {postHistory.length} {postHistory.length === 1 ? "Post" : "Posts"} Registrados
             </CardTitle>
             <CardDescription>
-              Histórico completo de todas as publicações
+              Posts de hoje • Histórico limpo automaticamente à meia-noite
             </CardDescription>
           </CardHeader>
           <CardContent>
