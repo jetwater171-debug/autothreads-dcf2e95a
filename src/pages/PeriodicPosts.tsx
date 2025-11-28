@@ -232,13 +232,7 @@ const PeriodicPosts = () => {
         account_id: data.selectedAccount,
         campaign_id: data.selectedCampaign === "none" ? null : data.selectedCampaign,
         interval_minutes: parseInt(data.intervalMinutes),
-        post_type: data.postType,
-        use_random_phrase: data.postType === 'text' ? data.useRandomPhrase : (data.useText ? data.useRandomPhrase : false),
-        specific_phrase_id: data.postType === 'text' && !data.useRandomPhrase ? data.selectedPhrase || null : (data.useText && !data.useRandomPhrase ? data.selectedPhrase || null : null),
-        random_phrase_folder_id: (data.postType === 'text' && data.useRandomPhrase) || (data.postType !== 'text' && data.useText && data.useRandomPhrase) ? data.selectedRandomPhraseFolder : null,
-        use_random_image: data.postType === 'image' ? data.useRandomImage : false,
-        specific_image_id: data.postType === 'image' && !data.useRandomImage ? data.selectedImage || null : null,
-        carousel_image_ids: data.postType === 'carousel' ? data.carouselImages : [],
+        post_id: data.selectedPost,
         use_intelligent_delay: data.useIntelligentDelay,
       });
 
@@ -264,18 +258,14 @@ const PeriodicPosts = () => {
   };
 
   const handleNavigateToAddContent = (
-    type: 'phrases' | 'images' | 'campaigns',
+    type: 'posts' | 'campaigns',
     currentData: WizardData,
     currentStep: number
   ) => {
-    // Salvar dados temporários do wizard
     setWizardDraftData(currentData);
     setWizardDraftStep(currentStep);
-    
-    // Fechar o wizard temporariamente
     setOpen(false);
     
-    // Navegar para a página correspondente
     const routes = {
       posts: '/posts',
       campaigns: '/campaigns',
@@ -283,7 +273,6 @@ const PeriodicPosts = () => {
     
     navigate(routes[type]);
     
-    // Marcar para reabrir quando voltar
     setTimeout(() => {
       setShouldReopenWizard(true);
     }, 500);
@@ -440,16 +429,10 @@ const PeriodicPosts = () => {
                       ) : (
                         <XCircle className="h-4 w-4 text-destructive" />
                       )}
-                      {post.has_missing_phrase && (
+                      {post.has_missing_post && (
                         <Badge variant="destructive" className="gap-1 text-xs">
                           <AlertCircle className="h-3 w-3" />
-                          Frase removida
-                        </Badge>
-                      )}
-                      {post.has_missing_images && (
-                        <Badge variant="destructive" className="gap-1 text-xs">
-                          <AlertCircle className="h-3 w-3" />
-                          Imagem removida
+                          Post removido
                         </Badge>
                       )}
                       {post.last_error && (
@@ -531,17 +514,11 @@ const PeriodicPosts = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Modo:</span>
-                    <span>
-                      {post.use_random_phrase ? "Frase aleatória" : "Frase específica"}
-                    </span>
-                  </div>
-                  {!post.use_random_phrase && post.phrases && (
+                  {post.posts && (
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Frase:</span>
+                      <span className="text-muted-foreground">Conteúdo:</span>
                       <span className="max-w-xs truncate">
-                        {post.phrases.content}
+                        {post.posts.content?.slice(0, 50) || 'Post sem texto'}
                       </span>
                     </div>
                   )}
@@ -558,7 +535,6 @@ const PeriodicPosts = () => {
                     </div>
                   )}
                 </div>
-
               </CardContent>
             </Card>
           ))}

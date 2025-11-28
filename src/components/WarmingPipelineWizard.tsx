@@ -19,7 +19,7 @@ export interface PostConfig {
   postOrder: number;
   scheduledTime: string;
   useIntelligentDelay: boolean;
-  postType: "text" | "image" | "text_image" | "carousel";
+  postType?: "text" | "image" | "text_image" | "carousel";
   textMode?: "custom" | "specific" | "random" | "random_folder";
   customText?: string;
   specificPhraseId?: string;
@@ -28,6 +28,7 @@ export interface PostConfig {
   specificImageId?: string;
   randomImageFolderId?: string;
   carouselImageIds?: string[];
+  postId?: string;
 }
 
 export interface WarmingPipelineData {
