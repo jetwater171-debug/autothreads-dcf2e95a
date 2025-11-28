@@ -341,18 +341,20 @@ export default function Posts() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-1">
-            <FolderManager
-              folders={folders}
-              type="post" 
-              selectedFolder={selectedFolder}
-              onFolderSelect={setSelectedFolder}
-              onFoldersUpdate={loadFolders}
-            />
+            <div className="sticky top-6">
+              <FolderManager
+                folders={folders}
+                type="post" 
+                selectedFolder={selectedFolder}
+                onFolderSelect={setSelectedFolder}
+                onFoldersUpdate={loadFolders}
+              />
+            </div>
           </div>
 
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4">
             {filteredPosts.length === 0 ? (
               <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-12">
@@ -366,7 +368,7 @@ export default function Posts() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                 <AnimatePresence mode="popLayout">
                   {filteredPosts.map((post) => (
                     <motion.div
@@ -377,11 +379,11 @@ export default function Posts() {
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <Card className="group hover:shadow-xl hover:scale-[1.02] transition-all duration-300 h-full flex flex-col overflow-hidden border-border/50">
+                      <Card className="group hover:shadow-xl hover:scale-[1.01] transition-all duration-200 h-full flex flex-col overflow-hidden border-border/50">
                         <CardContent className="p-0 flex-1 flex flex-col">
                           {/* Preview de imagens */}
                           {post.image_urls.length > 0 && (
-                            <div className="relative w-full aspect-square bg-muted/30">
+                            <div className="relative w-full aspect-[4/3] bg-muted/30">
                               <img
                                 src={post.image_urls[0]}
                                 alt=""

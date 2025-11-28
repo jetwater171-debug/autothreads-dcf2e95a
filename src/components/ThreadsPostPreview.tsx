@@ -66,13 +66,13 @@ export const ThreadsPostPreview = ({
 
           {/* Images Grid */}
           {images && images.length > 0 && (
-            <div className={`grid ${getImageGridClass()} gap-1 rounded-lg overflow-hidden`}>
+            <div className={`grid ${getImageGridClass()} gap-1 rounded-lg overflow-hidden max-w-sm`}>
               {images.slice(0, 4).map((image, index) => (
                 <div
                   key={index}
-                  className={`relative aspect-square ${
-                    images.length === 3 && index === 0 ? "row-span-2" : ""
-                  }`}
+                  className={`relative ${
+                    images.length === 1 ? "aspect-[4/3]" : "aspect-video"
+                  } ${images.length === 3 && index === 0 ? "row-span-2" : ""}`}
                 >
                   <img
                     src={image}
@@ -81,7 +81,7 @@ export const ThreadsPostPreview = ({
                   />
                   {images.length > 4 && index === 3 && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                      <span className="text-white font-bold text-2xl">
+                      <span className="text-white font-bold text-xl">
                         +{images.length - 4}
                       </span>
                     </div>
