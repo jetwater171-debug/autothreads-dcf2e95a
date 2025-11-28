@@ -93,25 +93,13 @@ const Repost = () => {
     // Remove espaços em branco
     link = link.trim();
 
-    // Se for apenas um ID alfanumérico (IDs do Threads podem ter letras e números)
-    if (/^[a-zA-Z0-9_-]+$/.test(link) && link.length > 5) {
+    // A API do Threads requer IDs numéricos de media
+    // Aceita apenas números (IDs retornados pela API)
+    if (/^\d+$/.test(link)) {
       return link;
     }
 
-    // Extrair ID de URLs do Threads (aceita .com ou .net)
-    // Exemplos: https://threads.com/t/ABC123, https://www.threads.com/@user/post/ABC123
-    const patterns = [
-      /threads\.(com|net)\/t\/([^/?]+)/,
-      /threads\.(com|net)\/@[^/]+\/post\/([^/?]+)/,
-    ];
-
-    for (const pattern of patterns) {
-      const match = link.match(pattern);
-      if (match && match[2]) {
-        return match[2];
-      }
-    }
-
+    // Se não for numérico, retorna null
     return null;
   };
 
@@ -135,8 +123,8 @@ const Repost = () => {
     const postId = extractPostId(postLink);
     if (!postId) {
       toast({
-        title: "Link inválido",
-        description: "Por favor, insira um link válido do Threads ou um ID de post",
+        title: "ID inválido",
+        description: "Por favor, insira um ID numérico válido do post (ex: 123456789)",
         variant: "destructive",
       });
       return;
@@ -244,19 +232,33 @@ const Repost = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Repeat2 className="h-5 w-5 text-primary" />
-              Link do Post
+              ID do Post do Threads
             </CardTitle>
             <CardDescription>
-              Cole o link completo do post do Threads ou apenas o ID do post
+              Insira o ID numérico do media do Threads (ex: 123456789)
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Input
-              placeholder="https://threads.net/t/ABC123 ou apenas ABC123"
+              placeholder="123456789"
               value={postLink}
               onChange={(e) => setPostLink(e.target.value)}
               className="text-base"
             />
+            <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
+              <p className="text-sm text-muted-foreground mb-2">
+                <strong>📝 Como obter o ID do post:</strong>
+              </p>
+              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>Acesse suas próprias threads ou de contas que você segue</li>
+                <li>O ID numérico pode ser obtido através da API do Threads</li>
+                <li>Você só pode repostar posts acessíveis através da sua conta</li>
+              </ol>
+              <p className="text-xs text-muted-foreground mt-3 italic">
+                ⚠️ Nota: Links públicos do Threads (threads.com/@user/post/ABC) não são aceitos diretamente. 
+                É necessário o ID numérico retornado pela API.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
