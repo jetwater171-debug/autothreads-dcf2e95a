@@ -184,6 +184,7 @@ export type Database = {
           interval_minutes: number
           is_active: boolean | null
           last_posted_at: string | null
+          post_id: string | null
           post_type: string | null
           random_phrase_folder_id: string | null
           specific_image_id: string | null
@@ -204,6 +205,7 @@ export type Database = {
           interval_minutes: number
           is_active?: boolean | null
           last_posted_at?: string | null
+          post_id?: string | null
           post_type?: string | null
           random_phrase_folder_id?: string | null
           specific_image_id?: string | null
@@ -224,6 +226,7 @@ export type Database = {
           interval_minutes?: number
           is_active?: boolean | null
           last_posted_at?: string | null
+          post_id?: string | null
           post_type?: string | null
           random_phrase_folder_id?: string | null
           specific_image_id?: string | null
@@ -248,6 +251,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodic_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
           {
@@ -524,6 +534,7 @@ export type Database = {
           id: string
           intelligent_delay: boolean
           order_index: number
+          post_id: string | null
           random_image_folder_id: string | null
           random_phrase_folder_id: string | null
           specific_image_id: string | null
@@ -540,6 +551,7 @@ export type Database = {
           id?: string
           intelligent_delay?: boolean
           order_index: number
+          post_id?: string | null
           random_image_folder_id?: string | null
           random_phrase_folder_id?: string | null
           specific_image_id?: string | null
@@ -556,6 +568,7 @@ export type Database = {
           id?: string
           intelligent_delay?: boolean
           order_index?: number
+          post_id?: string | null
           random_image_folder_id?: string | null
           random_phrase_folder_id?: string | null
           specific_image_id?: string | null
@@ -570,6 +583,13 @@ export type Database = {
             columns: ["day_id"]
             isOneToOne: false
             referencedRelation: "warmup_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warmup_day_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
           {

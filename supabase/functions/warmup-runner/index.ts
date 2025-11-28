@@ -73,69 +73,86 @@ Deno.serve(async (req) => {
         let text = null;
         const imageUrls: string[] = [];
 
-        // Get text content - priority: custom_text > random phrase > specific phrase
-        if (['text', 'text_image', 'carousel'].includes(dayPost.content_type)) {
-          // First check for custom text (direct input from user)
-          if (dayPost.custom_text) {
-            text = dayPost.custom_text;
-          } else if (dayPost.use_random_phrase) {
-            let query = supabase
-              .from('phrases')
-              .select('content')
-              .eq('user_id', scheduledPost.warmup_runs.warmup_sequences.user_id);
+        // NEW: Check if post_id is set (uses new posts table)
+        if (dayPost.post_id) {
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('content, image_urls, post_type')
+            .eq('id', dayPost.post_id)
+            .single();
 
-            if (dayPost.random_phrase_folder_id) {
-              query = query.eq('folder_id', dayPost.random_phrase_folder_id);
+          if (postData) {
+            text = postData.content;
+            if (postData.image_urls) {
+              imageUrls.push(...postData.image_urls);
             }
-
-            const { data: phrases } = await query;
-            if (phrases && phrases.length > 0) {
-              const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-              text = randomPhrase.content;
-            }
-          } else if (dayPost.specific_phrase_id) {
-            const { data: phrase } = await supabase
-              .from('phrases')
-              .select('content')
-              .eq('id', dayPost.specific_phrase_id)
-              .single();
-            if (phrase) text = phrase.content;
           }
-        }
+        } else {
+          // LEGACY: Use old method with phrases/images
+          // Get text content - priority: custom_text > random phrase > specific phrase
+          if (['text', 'text_image', 'carousel'].includes(dayPost.content_type)) {
+            // First check for custom text (direct input from user)
+            if (dayPost.custom_text) {
+              text = dayPost.custom_text;
+            } else if (dayPost.use_random_phrase) {
+              let query = supabase
+                .from('phrases')
+                .select('content')
+                .eq('user_id', scheduledPost.warmup_runs.warmup_sequences.user_id);
 
-        // Get image content
-        if (['image', 'text_image'].includes(dayPost.content_type)) {
-          if (dayPost.use_random_image) {
-            let query = supabase
-              .from('images')
-              .select('public_url')
-              .eq('user_id', scheduledPost.warmup_runs.warmup_sequences.user_id);
+              if (dayPost.random_phrase_folder_id) {
+                query = query.eq('folder_id', dayPost.random_phrase_folder_id);
+              }
 
-            if (dayPost.random_image_folder_id) {
-              query = query.eq('folder_id', dayPost.random_image_folder_id);
+              const { data: phrases } = await query;
+              if (phrases && phrases.length > 0) {
+                const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+                text = randomPhrase.content;
+              }
+            } else if (dayPost.specific_phrase_id) {
+              const { data: phrase } = await supabase
+                .from('phrases')
+                .select('content')
+                .eq('id', dayPost.specific_phrase_id)
+                .single();
+              if (phrase) text = phrase.content;
             }
-
-            const { data: images } = await query;
-            if (images && images.length > 0) {
-              const randomImage = images[Math.floor(Math.random() * images.length)];
-              imageUrls.push(randomImage.public_url);
-            }
-          } else if (dayPost.specific_image_id) {
-            const { data: image } = await supabase
-              .from('images')
-              .select('public_url')
-              .eq('id', dayPost.specific_image_id)
-              .single();
-            if (image) imageUrls.push(image.public_url);
           }
-        }
 
-        // Get carousel images
-        if (dayPost.content_type === 'carousel') {
-          const carouselImages = dayPost.warmup_day_post_carousel_images || [];
-          for (const carouselImage of carouselImages) {
-            if (carouselImage.images) {
-              imageUrls.push(carouselImage.images.public_url);
+          // Get image content
+          if (['image', 'text_image'].includes(dayPost.content_type)) {
+            if (dayPost.use_random_image) {
+              let query = supabase
+                .from('images')
+                .select('public_url')
+                .eq('user_id', scheduledPost.warmup_runs.warmup_sequences.user_id);
+
+              if (dayPost.random_image_folder_id) {
+                query = query.eq('folder_id', dayPost.random_image_folder_id);
+              }
+
+              const { data: images } = await query;
+              if (images && images.length > 0) {
+                const randomImage = images[Math.floor(Math.random() * images.length)];
+                imageUrls.push(randomImage.public_url);
+              }
+            } else if (dayPost.specific_image_id) {
+              const { data: image } = await supabase
+                .from('images')
+                .select('public_url')
+                .eq('id', dayPost.specific_image_id)
+                .single();
+              if (image) imageUrls.push(image.public_url);
+            }
+          }
+
+          // Get carousel images
+          if (dayPost.content_type === 'carousel') {
+            const carouselImages = dayPost.warmup_day_post_carousel_images || [];
+            for (const carouselImage of carouselImages) {
+              if (carouselImage.images) {
+                imageUrls.push(carouselImage.images.public_url);
+              }
             }
           }
         }
