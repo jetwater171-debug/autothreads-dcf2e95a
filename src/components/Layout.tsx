@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun, TrendingUp, ImageIcon, Megaphone, History, Flame, Repeat2 } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun, TrendingUp, ImageIcon, Megaphone, History, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useEffect, useState } from "react";
@@ -77,11 +77,6 @@ const Layout = ({
     path: "/manual-post",
     label: "Post Manual",
     icon: Send,
-    disabled: false
-  }, {
-    path: "/repost",
-    label: "Repost",
-    icon: Repeat2,
     disabled: false
   }, {
     path: "/analytics",

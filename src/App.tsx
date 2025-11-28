@@ -15,7 +15,6 @@ import Campaigns from "./pages/Campaigns";
 import CampaignDetails from "./pages/CampaignDetails";
 import PostHistory from "./pages/PostHistory";
 import WarmingPipeline from "./pages/WarmingPipeline";
-import Repost from "./pages/Repost";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,7 +39,6 @@ const App = () => (
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/post-history" element={<PostHistory />} />
           <Route path="/warming-pipeline" element={<WarmingPipeline />} />
-          <Route path="/repost" element={<Repost />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
