@@ -54,14 +54,9 @@ const Layout = ({
     icon: Sparkles,
     disabled: false
   }, {
-    path: "/phrases",
-    label: "Frases",
+    path: "/posts",
+    label: "Posts",
     icon: MessageSquare,
-    disabled: false
-  }, {
-    path: "/images",
-    label: "Imagens",
-    icon: ImageIcon,
     disabled: false
   }, {
     path: "/warming-pipeline",

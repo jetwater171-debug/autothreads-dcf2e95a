@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import AccountsOAuth from "./pages/AccountsOAuth";
 import ThreadsCallback from "./pages/ThreadsCallback";
 import Phrases from "./pages/Phrases";
+import Posts from "./pages/Posts";
 import PeriodicPosts from "./pages/PeriodicPosts";
 import ManualPost from "./pages/ManualPost";
 import Images from "./pages/Images";
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/accounts" element={<AccountsOAuth />} />
           <Route path="/phrases" element={<Phrases />} />
+          <Route path="/posts" element={<Posts />} />
           <Route path="/images" element={<Images />} />
           <Route path="/periodic-posts" element={<PeriodicPosts />} />
           <Route path="/campaigns" element={<Campaigns />} />

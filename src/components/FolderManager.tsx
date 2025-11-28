@@ -20,7 +20,7 @@ interface Folder {
 
 interface FolderManagerProps {
   folders: Folder[];
-  type: "image" | "phrase";
+  type: "image" | "phrase" | "post";
   selectedFolder: string | null;
   onFolderSelect: (folderId: string | null) => void;
   onFoldersUpdate: () => void;
@@ -219,7 +219,7 @@ export const FolderManager = ({ folders, type, selectedFolder, onFolderSelect, o
             <DialogHeader>
               <DialogTitle>Criar Pasta</DialogTitle>
               <DialogDescription>
-                Organize suas {type === "image" ? "imagens" : "frases"} em pastas
+                Organize suas {type === "image" ? "imagens" : type === "phrase" ? "frases" : "posts"} em pastas
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateFolder} className="space-y-4">
