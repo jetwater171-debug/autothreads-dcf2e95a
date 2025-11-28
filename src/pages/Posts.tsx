@@ -366,89 +366,97 @@ export default function Posts() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <AnimatePresence mode="popLayout">
                   {filteredPosts.map((post) => (
                     <motion.div
                       key={post.id}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <Card className="group hover:shadow-lg transition-all h-full flex flex-col">
-                        <CardContent className="p-3 flex-1 flex flex-col">
-                          {/* Tipo do post com badge */}
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
-                              {post.post_type === 'text' && "Texto"}
-                              {post.post_type === 'image' && "Imagem"}
-                              {post.post_type === 'carousel' && "Carrossel"}
-                            </div>
-                            
-                            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => {
-                                  setPostToMove(post);
-                                  setTargetFolderId(post.folder_id);
-                                  setIsMoveDialogOpen(true);
-                                }}
-                              >
-                                <FolderInputIcon className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => handleEdit(post)}
-                              >
-                                <Edit className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                onClick={() => handleDelete(post.id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-
+                      <Card className="group hover:shadow-xl hover:scale-[1.02] transition-all duration-300 h-full flex flex-col overflow-hidden border-border/50">
+                        <CardContent className="p-0 flex-1 flex flex-col">
                           {/* Preview de imagens */}
                           {post.image_urls.length > 0 && (
-                            <div className="mb-2 relative">
+                            <div className="relative w-full aspect-square bg-muted/30">
                               <img
                                 src={post.image_urls[0]}
                                 alt=""
-                                className="w-full h-32 object-cover rounded-lg"
+                                className="w-full h-full object-cover"
                               />
                               {post.image_urls.length > 1 && (
-                                <div className="absolute top-2 right-2 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs font-medium">
+                                <div className="absolute top-2 right-2 bg-background/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-semibold shadow-lg border border-border/50">
                                   +{post.image_urls.length - 1}
                                 </div>
                               )}
+                              {/* Tipo do post badge sobreposto */}
+                              <div className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/95 backdrop-blur-sm text-foreground text-xs font-medium border border-border/50 shadow-lg">
+                                {post.post_type === 'text' && "📝 Texto"}
+                                {post.post_type === 'image' && "🖼️ Imagem"}
+                                {post.post_type === 'carousel' && "🎠 Carrossel"}
+                              </div>
                             </div>
                           )}
 
-                          {/* Conteúdo de texto */}
-                          {post.content && (
-                            <div className="text-xs text-muted-foreground line-clamp-3 flex-1">
-                              {post.content}
-                            </div>
-                          )}
+                          {/* Conteúdo */}
+                          <div className="p-4 flex-1 flex flex-col gap-3">
+                            {/* Se não houver imagem, mostrar o badge do tipo no topo */}
+                            {post.image_urls.length === 0 && (
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium w-fit">
+                                📝 Texto
+                              </div>
+                            )}
+                            
+                            {/* Conteúdo de texto */}
+                            {post.content && (
+                              <p className="text-sm text-foreground/80 line-clamp-3 flex-1">
+                                {post.content}
+                              </p>
+                            )}
 
-                          {/* Data de criação */}
-                          <div className="text-xs text-muted-foreground/60 mt-2 pt-2 border-t">
-                            {new Date(post.created_at).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {/* Footer com data e ações */}
+                            <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(post.created_at).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                })}
+                              </span>
+                              
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                                  onClick={() => {
+                                    setPostToMove(post);
+                                    setTargetFolderId(post.folder_id);
+                                    setIsMoveDialogOpen(true);
+                                  }}
+                                >
+                                  <FolderInputIcon className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                                  onClick={() => handleEdit(post)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={() => handleDelete(post.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
