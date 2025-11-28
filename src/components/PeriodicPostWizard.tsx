@@ -45,17 +45,11 @@ interface Campaign {
   status: string;
 }
 
-interface Phrase {
+interface Post {
   id: string;
-  content: string;
-  folder_id: string | null;
-}
-
-interface Image {
-  id: string;
-  file_name: string;
-  public_url: string;
-  alt_text: string | null;
+  content: string | null;
+  post_type: string;
+  image_urls: string[];
   folder_id: string | null;
 }
 
@@ -68,15 +62,13 @@ interface Folder {
 interface WizardProps {
   accounts: ThreadsAccount[];
   campaigns: Campaign[];
-  phrases: Phrase[];
-  images: Image[];
-  phraseFolders: Folder[];
-  imageFolders: Folder[];
+  posts: Post[];
+  postFolders: Folder[];
   onSubmit: (data: WizardData) => Promise<void>;
   onCancel: () => void;
   initialData?: Partial<WizardData>;
   initialStep?: number;
-  onNavigateToAddContent?: (type: 'phrases' | 'images' | 'campaigns', currentData: WizardData, currentStep: number) => void;
+  onNavigateToAddContent?: (type: 'posts' | 'campaigns', currentData: WizardData, currentStep: number) => void;
 }
 
 export interface WizardData {
@@ -84,14 +76,7 @@ export interface WizardData {
   selectedAccount: string;
   selectedCampaign: string;
   intervalMinutes: string;
-  postType: 'text' | 'image' | 'carousel';
-  useText: boolean;
-  useRandomPhrase: boolean;
-  selectedPhrase: string;
-  selectedRandomPhraseFolder: string | null;
-  useRandomImage: boolean;
-  selectedImage: string;
-  carouselImages: string[];
+  selectedPost: string;
   useIntelligentDelay: boolean;
 }
 

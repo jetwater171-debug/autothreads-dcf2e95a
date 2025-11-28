@@ -18,16 +18,11 @@ interface PeriodicPost {
   id: string;
   title: string;
   interval_minutes: number;
-  use_random_phrase: boolean;
   use_intelligent_delay: boolean;
   is_active: boolean;
   last_posted_at: string | null;
   post_type: string;
-  use_random_image: boolean;
-  specific_image_id: string | null;
-  specific_phrase_id: string | null;
-  random_phrase_folder_id: string | null;
-  carousel_image_ids: string[] | null;
+  post_id: string | null;
   account_id: string;
   campaign_id: string | null;
   threads_accounts: {
@@ -35,25 +30,22 @@ interface PeriodicPost {
     account_id: string;
     profile_picture_url: string | null;
   };
-  phrases: {
-    content: string;
-  } | null;
-  images?: {
-    public_url: string;
+  posts?: {
+    content: string | null;
+    image_urls: string[];
   } | null;
   campaigns?: {
     title: string;
   } | null;
-  has_missing_phrase?: boolean;
-  has_missing_images?: boolean;
+  has_missing_post?: boolean;
   last_error?: string | null;
 }
 
-interface Image {
+interface Post {
   id: string;
-  file_name: string;
-  public_url: string;
-  alt_text: string | null;
+  content: string | null;
+  post_type: string;
+  image_urls: string[];
   folder_id: string | null;
 }
 
@@ -62,12 +54,6 @@ interface ThreadsAccount {
   username: string | null;
   account_id: string;
   profile_picture_url: string | null;
-}
-
-interface Phrase {
-  id: string;
-  content: string;
-  folder_id: string | null;
 }
 
 interface Campaign {
@@ -85,11 +71,9 @@ interface Folder {
 const PeriodicPosts = () => {
   const [posts, setPosts] = useState<PeriodicPost[]>([]);
   const [accounts, setAccounts] = useState<ThreadsAccount[]>([]);
-  const [phrases, setPhrases] = useState<Phrase[]>([]);
-  const [images, setImages] = useState<Image[]>([]);
+  const [availablePosts, setAvailablePosts] = useState<Post[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [phraseFolders, setPhraseFolders] = useState<Folder[]>([]);
-  const [imageFolders, setImageFolders] = useState<Folder[]>([]);
+  const [postFolders, setPostFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [postingNow, setPostingNow] = useState<string | null>(null);
@@ -117,7 +101,7 @@ const PeriodicPosts = () => {
         navigate("/auth");
         return;
       }
-      await Promise.all([loadPosts(), loadAccounts(), loadPhrases(), loadImages(), loadCampaigns(), loadPhraseFolders(), loadImageFolders()]);
+      await Promise.all([loadPosts(), loadAccounts(), loadAvailablePosts(), loadCampaigns(), loadPostFolders()]);
     };
 
     checkAuth();
@@ -139,8 +123,7 @@ const PeriodicPosts = () => {
       
       // Buscar último erro e validar conteúdo de cada automação
       const postsWithErrors = await Promise.all((data || []).map(async (post) => {
-        let has_missing_phrase = false;
-        let has_missing_images = false;
+        let has_missing_post = false;
         let last_error = null;
 
         // Buscar último post no histórico para esta automação/conta
@@ -156,39 +139,19 @@ const PeriodicPosts = () => {
           last_error = lastHistory.error_message;
         }
 
-        // Verificar frase específica
-        if (post.specific_phrase_id && !post.use_random_phrase) {
-          const { data: phrase } = await supabase
-            .from("phrases")
+        // Verificar se post_id existe
+        if (post.post_id) {
+          const { data: postData } = await supabase
+            .from("posts")
             .select("id")
-            .eq("id", post.specific_phrase_id)
+            .eq("id", post.post_id)
             .maybeSingle();
-          has_missing_phrase = !phrase;
-        }
-
-        // Verificar imagem específica
-        if (post.post_type === 'image' && post.specific_image_id && !post.use_random_image) {
-          const { data: image } = await supabase
-            .from("images")
-            .select("id")
-            .eq("id", post.specific_image_id)
-            .maybeSingle();
-          has_missing_images = !image;
-        }
-
-        // Verificar imagens do carrossel
-        if (post.post_type === 'carousel' && post.carousel_image_ids && post.carousel_image_ids.length > 0) {
-          const { data: carouselImgs } = await supabase
-            .from("images")
-            .select("id")
-            .in("id", post.carousel_image_ids);
-          has_missing_images = !carouselImgs || carouselImgs.length !== post.carousel_image_ids.length;
+          has_missing_post = !postData;
         }
 
         return {
           ...post,
-          has_missing_phrase,
-          has_missing_images,
+          has_missing_post,
           last_error,
         };
       }));
@@ -215,59 +178,32 @@ const PeriodicPosts = () => {
     }
   };
 
-  const loadPhrases = async () => {
+  const loadAvailablePosts = async () => {
     try {
       const { data, error } = await supabase
-        .from("phrases")
-        .select("id, content, folder_id");
+        .from("posts")
+        .select("id, content, post_type, image_urls, folder_id")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPhrases(data || []);
+      setAvailablePosts(data || []);
     } catch (error) {
-      console.error("Error loading phrases:", error);
+      console.error("Error loading posts:", error);
     }
   };
 
-  const loadImages = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("images")
-        .select("id, file_name, public_url, alt_text, folder_id");
-
-      if (error) throw error;
-      setImages(data || []);
-    } catch (error) {
-      console.error("Error loading images:", error);
-    }
-  };
-
-  const loadPhraseFolders = async () => {
+  const loadPostFolders = async () => {
     try {
       const { data, error } = await supabase
         .from("content_folders")
         .select("*")
-        .eq("type", "phrase")
+        .eq("type", "post")
         .order("name");
 
       if (error) throw error;
-      setPhraseFolders(data || []);
+      setPostFolders(data || []);
     } catch (error) {
-      console.error("Error loading phrase folders:", error);
-    }
-  };
-
-  const loadImageFolders = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("content_folders")
-        .select("*")
-        .eq("type", "image")
-        .order("name");
-
-      if (error) throw error;
-      setImageFolders(data || []);
-    } catch (error) {
-      console.error("Error loading image folders:", error);
+      console.error("Error loading post folders:", error);
     }
   };
 
@@ -341,8 +277,7 @@ const PeriodicPosts = () => {
     
     // Navegar para a página correspondente
     const routes = {
-      phrases: '/phrases',
-      images: '/images',
+      posts: '/posts',
       campaigns: '/campaigns',
     };
     
@@ -410,58 +345,28 @@ const PeriodicPosts = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Não autenticado");
 
-      // Buscar frase se necessário
-      let phraseContent = "";
-      if (post.post_type === 'text' || (post.post_type !== 'text' && post.specific_phrase_id)) {
-        if (post.use_random_phrase) {
-          // Buscar frase aleatória respeitando a pasta (se especificada)
-          let query = supabase.from("phrases").select("content");
-          
-          if (post.random_phrase_folder_id) {
-            query = query.eq("folder_id", post.random_phrase_folder_id);
-          }
-          
-          const { data: allPhrases } = await query;
-          if (allPhrases && allPhrases.length > 0) {
-            const randomPhrase = allPhrases[Math.floor(Math.random() * allPhrases.length)];
-            phraseContent = randomPhrase.content;
-          }
-        } else if (post.phrases) {
-          phraseContent = post.phrases.content;
-        }
-      }
-
-      // Buscar imagens se necessário
+      // Buscar post content se disponível
+      let text = "";
       let imageUrls: string[] = [];
-      if (post.post_type === 'image') {
-        if (post.use_random_image) {
-          const { data: randomImage } = await supabase
-            .from("images")
-            .select("public_url")
-            .limit(1)
-            .single();
-          if (randomImage) imageUrls = [randomImage.public_url];
-        } else if (post.specific_image_id) {
-          const { data: image } = await supabase
-            .from("images")
-            .select("public_url")
-            .eq("id", post.specific_image_id)
-            .single();
-          if (image) imageUrls = [image.public_url];
+
+      if (post.post_id) {
+        const { data: postData } = await supabase
+          .from("posts")
+          .select("content, image_urls")
+          .eq("id", post.post_id)
+          .maybeSingle();
+        
+        if (postData) {
+          text = postData.content || "";
+          imageUrls = postData.image_urls || [];
         }
-      } else if (post.post_type === 'carousel' && post.carousel_image_ids) {
-        const { data: carouselImgs } = await supabase
-          .from("images")
-          .select("public_url")
-          .in("id", post.carousel_image_ids);
-        if (carouselImgs) imageUrls = carouselImgs.map(img => img.public_url);
       }
 
       // Chamar edge function para criar o post
       const { data, error } = await supabase.functions.invoke("threads-create-post", {
         body: {
           accountId: post.account_id,
-          text: phraseContent || undefined,
+          text: text || undefined,
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           postType: post.post_type,
         },
@@ -506,10 +411,8 @@ const PeriodicPosts = () => {
               <PeriodicPostWizard
                 accounts={accounts}
                 campaigns={campaigns}
-                phrases={phrases}
-                images={images}
-                phraseFolders={phraseFolders}
-                imageFolders={imageFolders}
+                posts={availablePosts}
+                postFolders={postFolders}
                 onSubmit={handleWizardSubmit}
                 onCancel={() => {
                   setOpen(false);
@@ -667,12 +570,12 @@ const PeriodicPosts = () => {
               <p className="text-muted-foreground mb-4">
                 Nenhuma automação configurada ainda
               </p>
-              {accounts.length === 0 || phrases.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center max-w-md">
-                  Você precisa ter pelo menos uma conta conectada e uma frase cadastrada
-                  para criar automações.
-                </p>
-              ) : (
+          {accounts.length === 0 || availablePosts.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center max-w-md">
+              Você precisa ter pelo menos uma conta conectada e um post cadastrado
+              para criar automações.
+            </p>
+          ) : (
                 <Button onClick={() => setOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Criar Primeira Automação

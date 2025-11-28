@@ -35,17 +35,17 @@ const Dashboard = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const [accountsRes, phrasesRes, postsRes, postsTodayRes] = await Promise.all([
+      const [accountsRes, postsContentRes, automationsRes, postsTodayRes] = await Promise.all([
         supabase.from("threads_accounts").select("id", { count: "exact" }),
-        supabase.from("phrases").select("id", { count: "exact" }),
+        supabase.from("posts").select("id", { count: "exact" }),
         supabase.from("periodic_posts").select("id", { count: "exact" }),
         supabase.from("post_history").select("id", { count: "exact" }).gte("posted_at", today.toISOString())
       ]);
 
       setStats({
         accounts: accountsRes.count || 0,
-        phrases: phrasesRes.count || 0,
-        periodicPosts: postsRes.count || 0,
+        phrases: postsContentRes.count || 0,
+        periodicPosts: automationsRes.count || 0,
         postsToday: postsTodayRes.count || 0
       });
     } catch (error) {
