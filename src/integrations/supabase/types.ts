@@ -384,6 +384,39 @@ export type Database = {
           },
         ]
       }
+      posts: {
+        Row: {
+          content: string | null
+          created_at: string
+          folder_id: string | null
+          id: string
+          image_urls: string[] | null
+          post_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          image_urls?: string[] | null
+          post_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          image_urls?: string[] | null
+          post_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       threads_accounts: {
         Row: {
           access_token: string
