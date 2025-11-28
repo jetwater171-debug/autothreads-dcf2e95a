@@ -137,11 +137,13 @@ Deno.serve(async (req) => {
           }
         }
 
-        // 2. NEW: Check if post_id is set (uses new posts table)
+        // 2. Buscar conteúdo do post
         let phraseContent = "";
         let imageUrls: string[] = [];
+        let actualPostType = post.post_type;
 
-        if (post.post_id) {
+        // Se for post específico, buscar pelo post_id
+        if (post.post_type === 'specific' && post.post_id) {
           const { data: postData } = await supabase
             .from('posts')
             .select('content, image_urls, post_type')
@@ -151,23 +153,49 @@ Deno.serve(async (req) => {
           if (postData) {
             phraseContent = postData.content || "";
             imageUrls = postData.image_urls || [];
+            // Determinar tipo real do post baseado no conteúdo
+            if (imageUrls.length > 1) {
+              actualPostType = 'carousel';
+            } else if (imageUrls.length === 1) {
+              actualPostType = 'image';
+            } else {
+              actualPostType = 'text';
+            }
           }
-        } else {
-          // LEGACY: Use old method with phrases/images
-          if (post.post_type !== "image" || post.use_random_phrase || post.specific_phrase_id) {
-            phraseContent = await getPhraseForPost(supabase, post);
-          }
+        } 
+        // Se for post aleatório, buscar um post aleatório
+        else if (post.post_type === 'random') {
+          let query = supabase
+            .from('posts')
+            .select('content, image_urls, post_type')
+            .eq('user_id', post.user_id);
 
-          imageUrls = await getImagesForPost(supabase, post);
+          // TODO: Filtrar por pasta se configurado (random_post_folder_id)
+          
+          const { data: randomPosts } = await query;
+
+          if (randomPosts && randomPosts.length > 0) {
+            const randomPost = randomPosts[Math.floor(Math.random() * randomPosts.length)];
+            phraseContent = randomPost.content || "";
+            imageUrls = randomPost.image_urls || [];
+            // Determinar tipo real do post baseado no conteúdo
+            if (imageUrls.length > 1) {
+              actualPostType = 'carousel';
+            } else if (imageUrls.length === 1) {
+              actualPostType = 'image';
+            } else {
+              actualPostType = 'text';
+            }
+          }
         }
 
-        // 4. Calcular hash do conteúdo
+        // 3. Calcular hash do conteúdo
         let contentForHash = "";
-        if (post.post_type === "text") {
+        if (actualPostType === "text") {
           contentForHash = phraseContent;
-        } else if (post.post_type === "image") {
+        } else if (actualPostType === "image") {
           contentForHash = imageUrls.join("");
-        } else if (post.post_type === "carousel") {
+        } else if (actualPostType === "carousel") {
           contentForHash = imageUrls.join("|");
         }
 
@@ -190,10 +218,9 @@ Deno.serve(async (req) => {
           await supabase.from("post_history").insert({
             user_id: post.user_id,
             account_id: post.account_id,
-            phrase_id: post.specific_phrase_id ?? null,
             content: phraseContent,
             image_urls: imageUrls,
-            post_type: post.post_type,
+            post_type: actualPostType,
             posted_at: now.toISOString(),
             content_hash: contentHash,
             duplicate_skipped: true,
@@ -233,7 +260,7 @@ Deno.serve(async (req) => {
             accountId: post.account_id,
             text: phraseContent,
             imageUrls,
-            postType: post.post_type,
+            postType: actualPostType,
             userId: post.user_id,
           },
           `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
@@ -247,10 +274,9 @@ Deno.serve(async (req) => {
           await supabase.from("post_history").insert({
             user_id: post.user_id,
             account_id: post.account_id,
-            phrase_id: post.specific_phrase_id ?? null,
             content: phraseContent,
             image_urls: imageUrls,
-            post_type: post.post_type,
+            post_type: actualPostType,
             posted_at: now.toISOString(),
             content_hash: contentHash,
             error_message: result.error,
@@ -274,10 +300,9 @@ Deno.serve(async (req) => {
         await supabase.from("post_history").insert({
           user_id: post.user_id,
           account_id: post.account_id,
-          phrase_id: post.specific_phrase_id ?? null,
           content: phraseContent,
           image_urls: imageUrls,
-          post_type: post.post_type,
+          post_type: actualPostType,
           threads_post_id: result.data.postId,
           posted_at: now.toISOString(),
           content_hash: contentHash,
