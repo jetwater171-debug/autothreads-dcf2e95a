@@ -93,22 +93,22 @@ const Repost = () => {
     // Remove espaços em branco
     link = link.trim();
 
-    // Se for apenas um ID numérico
-    if (/^\d+$/.test(link)) {
+    // Se for apenas um ID alfanumérico (IDs do Threads podem ter letras e números)
+    if (/^[a-zA-Z0-9_-]+$/.test(link) && link.length > 5) {
       return link;
     }
 
-    // Extrair ID de URLs do Threads
-    // Exemplos: https://threads.net/t/ABC123, https://www.threads.net/@user/post/ABC123
+    // Extrair ID de URLs do Threads (aceita .com ou .net)
+    // Exemplos: https://threads.com/t/ABC123, https://www.threads.com/@user/post/ABC123
     const patterns = [
-      /threads\.net\/t\/([^/?]+)/,
-      /threads\.net\/@[^/]+\/post\/([^/?]+)/,
+      /threads\.(com|net)\/t\/([^/?]+)/,
+      /threads\.(com|net)\/@[^/]+\/post\/([^/?]+)/,
     ];
 
     for (const pattern of patterns) {
       const match = link.match(pattern);
-      if (match && match[1]) {
-        return match[1];
+      if (match && match[2]) {
+        return match[2];
       }
     }
 
