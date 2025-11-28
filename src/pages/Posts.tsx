@@ -366,7 +366,7 @@ export default function Posts() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 <AnimatePresence mode="popLayout">
                   {filteredPosts.map((post) => (
                     <motion.div
@@ -376,62 +376,80 @@ export default function Posts() {
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <Card className="group hover:shadow-lg transition-all">
-                        <CardHeader>
-                          <div className="flex items-start justify-between gap-2">
-                            <CardTitle className="text-sm font-medium line-clamp-2">
-                              {post.post_type === 'text' && (post.content || "Post de texto")}
-                              {post.post_type === 'image' && "Post com imagem"}
-                              {post.post_type === 'carousel' && "Post carrossel"}
-                            </CardTitle>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Card className="group hover:shadow-lg transition-all h-full flex flex-col">
+                        <CardContent className="p-3 flex-1 flex flex-col">
+                          {/* Tipo do post com badge */}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
+                              {post.post_type === 'text' && "Texto"}
+                              {post.post_type === 'image' && "Imagem"}
+                              {post.post_type === 'carousel' && "Carrossel"}
+                            </div>
+                            
+                            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-7 w-7"
                                 onClick={() => {
                                   setPostToMove(post);
                                   setTargetFolderId(post.folder_id);
                                   setIsMoveDialogOpen(true);
                                 }}
                               >
-                                <FolderInputIcon className="h-4 w-4" />
+                                <FolderInputIcon className="h-3.5 w-3.5" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-7 w-7"
                                 onClick={() => handleEdit(post)}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-3.5 w-3.5" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
                                 onClick={() => handleDelete(post.id)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-sm text-muted-foreground line-clamp-3 mb-3">
-                            {post.content}
-                          </div>
+
+                          {/* Preview de imagens */}
                           {post.image_urls.length > 0 && (
-                            <div className="grid grid-cols-2 gap-2">
-                              {post.image_urls.slice(0, 2).map((url, idx) => (
-                                <img
-                                  key={idx}
-                                  src={url}
-                                  alt=""
-                                  className="w-full h-24 object-cover rounded-lg"
-                                />
-                              ))}
+                            <div className="mb-2 relative">
+                              <img
+                                src={post.image_urls[0]}
+                                alt=""
+                                className="w-full h-32 object-cover rounded-lg"
+                              />
+                              {post.image_urls.length > 1 && (
+                                <div className="absolute top-2 right-2 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs font-medium">
+                                  +{post.image_urls.length - 1}
+                                </div>
+                              )}
                             </div>
                           )}
+
+                          {/* Conteúdo de texto */}
+                          {post.content && (
+                            <div className="text-xs text-muted-foreground line-clamp-3 flex-1">
+                              {post.content}
+                            </div>
+                          )}
+
+                          {/* Data de criação */}
+                          <div className="text-xs text-muted-foreground/60 mt-2 pt-2 border-t">
+                            {new Date(post.created_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
                         </CardContent>
                       </Card>
                     </motion.div>
