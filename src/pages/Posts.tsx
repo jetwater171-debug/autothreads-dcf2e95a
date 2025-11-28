@@ -341,7 +341,7 @@ export default function Posts() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1">
             <div className="sticky top-6">
               <FolderManager
@@ -354,7 +354,7 @@ export default function Posts() {
             </div>
           </div>
 
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-3">
             {filteredPosts.length === 0 ? (
               <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-12">
