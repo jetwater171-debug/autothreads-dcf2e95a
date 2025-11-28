@@ -33,6 +33,7 @@ interface PeriodicPost {
   posts?: {
     content: string | null;
     image_urls: string[];
+    post_type: string;
   } | null;
   campaigns?: {
     title: string;
@@ -114,7 +115,7 @@ const PeriodicPosts = () => {
         .select(`
           *,
           threads_accounts (username, account_id, profile_picture_url),
-          phrases (content),
+          posts (content, image_urls, post_type),
           campaigns (title)
         `)
         .order("created_at", { ascending: false });
@@ -232,7 +233,8 @@ const PeriodicPosts = () => {
         account_id: data.selectedAccount,
         campaign_id: data.selectedCampaign === "none" ? null : data.selectedCampaign,
         interval_minutes: parseInt(data.intervalMinutes),
-        post_id: data.selectedPost,
+        post_id: data.useRandomPost ? null : data.selectedPost,
+        post_type: data.useRandomPost ? 'random' : 'specific',
         use_intelligent_delay: data.useIntelligentDelay,
       });
 
@@ -334,11 +336,11 @@ const PeriodicPosts = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Não autenticado");
 
-      // Buscar post content se disponível
       let text = "";
       let imageUrls: string[] = [];
 
-      if (post.post_id) {
+      // Se for post específico, buscar o post
+      if (post.post_type === 'specific' && post.post_id) {
         const { data: postData } = await supabase
           .from("posts")
           .select("content, image_urls")
@@ -349,6 +351,19 @@ const PeriodicPosts = () => {
           text = postData.content || "";
           imageUrls = postData.image_urls || [];
         }
+      } 
+      // Se for post aleatório, selecionar um post aleatoriamente
+      else if (post.post_type === 'random') {
+        const { data: randomPosts } = await supabase
+          .from("posts")
+          .select("content, image_urls")
+          .eq("user_id", session.user.id);
+        
+        if (randomPosts && randomPosts.length > 0) {
+          const randomPost = randomPosts[Math.floor(Math.random() * randomPosts.length)];
+          text = randomPost.content || "";
+          imageUrls = randomPost.image_urls || [];
+        }
       }
 
       // Chamar edge function para criar o post
@@ -357,7 +372,7 @@ const PeriodicPosts = () => {
           accountId: post.account_id,
           text: text || undefined,
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
-          postType: post.post_type,
+          postType: imageUrls.length > 1 ? 'carousel' : (imageUrls.length === 1 ? 'image' : 'text'),
         },
       });
 
@@ -460,9 +475,12 @@ const PeriodicPosts = () => {
                       <span>{post.threads_accounts.username || post.threads_accounts.account_id}</span>
                       <span className="text-muted-foreground/60">•</span>
                       <span className="capitalize">
-                        {post.post_type === 'text' ? '📝 Texto' : 
-                         post.post_type === 'image' ? '🖼️ Imagem' : 
-                         '🎠 Carrossel'}
+                        {post.post_type === 'random' ? '🎲 Aleatório' : 
+                         post.posts ? (
+                           post.posts.post_type === 'TEXT' ? '📝 Texto' : 
+                           post.posts.post_type === 'IMAGE' ? '🖼️ Imagem' : 
+                           '🎠 Carrossel'
+                         ) : '📝 Post'}
                       </span>
                       {post.campaigns && (
                         <>
@@ -514,13 +532,29 @@ const PeriodicPosts = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
-                  {post.posts && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Conteúdo:</span>
-                      <span className="max-w-xs truncate">
-                        {post.posts.content?.slice(0, 50) || 'Post sem texto'}
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Modo:</span>
+                    <span>
+                      {post.post_type === 'random' ? "Post Aleatório 🎲" : "Post Específico"}
+                    </span>
+                  </div>
+                  {post.posts && post.post_type === 'specific' && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Tipo:</span>
+                        <Badge variant="outline">
+                          {post.posts.post_type === 'TEXT' ? '📝 Texto' : 
+                           post.posts.post_type === 'IMAGE' ? '🖼️ Imagem' : 
+                           '🎠 Carrossel'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Conteúdo:</span>
+                        <span className="max-w-xs truncate">
+                          {post.posts.content?.slice(0, 50) || 'Post sem texto'}
+                        </span>
+                      </div>
+                    </>
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Delay Inteligente:</span>

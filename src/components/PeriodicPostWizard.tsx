@@ -76,7 +76,9 @@ export interface WizardData {
   selectedAccount: string;
   selectedCampaign: string;
   intervalMinutes: string;
+  useRandomPost: boolean;
   selectedPost: string;
+  selectedPostFolder: string | null;
   useIntelligentDelay: boolean;
 }
 
@@ -126,7 +128,9 @@ export function PeriodicPostWizard({
   const [selectedCampaign, setSelectedCampaign] = useState(initialData?.selectedCampaign || "none");
   const [intervalMinutes, setIntervalMinutes] = useState(initialData?.intervalMinutes || "60");
   const [useIntelligentDelay, setUseIntelligentDelay] = useState(initialData?.useIntelligentDelay || false);
+  const [useRandomPost, setUseRandomPost] = useState(initialData?.useRandomPost !== undefined ? initialData.useRandomPost : true);
   const [selectedPost, setSelectedPost] = useState(initialData?.selectedPost || "");
+  const [selectedPostFolder, setSelectedPostFolder] = useState<string | null>(initialData?.selectedPostFolder || null);
 
   const filteredPosts = selectedFolder === null 
     ? posts 
@@ -138,7 +142,9 @@ export function PeriodicPostWizard({
     selectedCampaign,
     intervalMinutes,
     useIntelligentDelay,
+    useRandomPost,
     selectedPost,
+    selectedPostFolder,
   });
 
   const handleAccountChange = (accountId: string) => {
@@ -183,7 +189,7 @@ export function PeriodicPostWizard({
     }
 
     if (step === 2) {
-      if (!selectedPost) newErrors.post = "Selecione um post";
+      if (!useRandomPost && !selectedPost) newErrors.post = "Selecione um post";
     }
 
     setErrors(newErrors);
@@ -212,7 +218,7 @@ export function PeriodicPostWizard({
     }
   };
 
-  const selectedPostData = posts.find(p => p.id === selectedPost);
+  const selectedPostData = useRandomPost ? null : posts.find(p => p.id === selectedPost);
   const selectedAccountData = accounts.find(a => a.id === selectedAccount);
 
   return (
@@ -506,85 +512,148 @@ export function PeriodicPostWizard({
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
-                    {/* Filtro por pasta */}
-                    {postFolders.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                        <Select value={selectedFolder || "all"} onValueChange={(v) => setSelectedFolder(v === "all" ? null : v)}>
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Todas as pastas" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Todas as pastas</SelectItem>
-                            {postFolders.map((folder) => (
-                              <SelectItem key={folder.id} value={folder.id}>
-                                {folder.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                  <div className="space-y-6">
+                    {/* Toggle Random/Específico */}
+                    <Card className="border-2">
+                      <CardContent className="pt-6 space-y-4">
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            <div>
+                              <Label htmlFor="random-post" className="text-base font-semibold cursor-pointer">
+                                Post Aleatório
+                              </Label>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1 cursor-help">
+                                    <Info className="h-3 w-3" />
+                                    Seleciona um post diferente a cada execução
+                                  </p>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs">
+                                  <p className="text-xs">Quando ativado, o sistema escolherá automaticamente um post diferente a cada vez que a automação executar</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </div>
+                          <Switch
+                            id="random-post"
+                            checked={useRandomPost}
+                            onCheckedChange={setUseRandomPost}
+                          />
+                        </div>
 
-                    {/* Grid de posts */}
-                    <div className="grid gap-4 max-h-[500px] overflow-y-auto pr-2">
-                      {filteredPosts.map((post) => (
-                        <Card
-                          key={post.id}
-                          className={cn(
-                            "cursor-pointer transition-all hover:border-primary/50",
-                            selectedPost === post.id && "border-primary border-2 shadow-lg shadow-primary/20"
-                          )}
-                          onClick={() => setSelectedPost(post.id)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-4">
-                              <div className="flex-1 space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline">
-                                    {post.post_type === 'TEXT' ? '📝 Texto' : 
-                                     post.post_type === 'IMAGE' ? '🖼️ Imagem' : 
-                                     '🎠 Carrossel'}
-                                  </Badge>
-                                  {selectedPost === post.id && (
-                                    <Badge className="bg-primary">
-                                      <Check className="h-3 w-3 mr-1" />
-                                      Selecionado
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm line-clamp-3">
-                                  {post.content || <span className="text-muted-foreground italic">Post sem texto</span>}
-                                </p>
-                                {post.image_urls && post.image_urls.length > 0 && (
-                                  <div className="flex gap-2 flex-wrap">
-                                    {post.image_urls.slice(0, 3).map((url, i) => (
-                                      <img
-                                        key={i}
-                                        src={url}
-                                        alt=""
-                                        className="h-16 w-16 object-cover rounded border"
-                                      />
-                                    ))}
-                                    {post.image_urls.length > 3 && (
-                                      <div className="h-16 w-16 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                                        +{post.image_urls.length - 3}
+                        {useRandomPost && (
+                          <div className="space-y-3">
+                            <Label className="text-base font-semibold flex items-center gap-2">
+                              <FolderOpen className="h-4 w-4 text-primary" />
+                              Pasta (Opcional)
+                            </Label>
+                            <Select value={selectedPostFolder || "all"} onValueChange={(v) => setSelectedPostFolder(v === "all" ? null : v)}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Todos os posts" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">Todos os posts</SelectItem>
+                                {postFolders.map((folder) => (
+                                  <SelectItem key={folder.id} value={folder.id}>
+                                    {folder.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                              {selectedPostFolder 
+                                ? `Escolherá aleatoriamente entre ${filteredPosts.length} post(s) da pasta selecionada`
+                                : `Escolherá aleatoriamente entre ${posts.length} post(s)`}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {!useRandomPost && (
+                      <div className="space-y-4">
+                        {/* Filtro por pasta */}
+                        {postFolders.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                            <Select value={selectedFolder || "all"} onValueChange={(v) => setSelectedFolder(v === "all" ? null : v)}>
+                              <SelectTrigger className="w-[200px]">
+                                <SelectValue placeholder="Todas as pastas" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">Todas as pastas</SelectItem>
+                                {postFolders.map((folder) => (
+                                  <SelectItem key={folder.id} value={folder.id}>
+                                    {folder.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {/* Grid de posts */}
+                        <div className="grid gap-4 max-h-[500px] overflow-y-auto pr-2">
+                          {filteredPosts.map((post) => (
+                            <Card
+                              key={post.id}
+                              className={cn(
+                                "cursor-pointer transition-all hover:border-primary/50",
+                                selectedPost === post.id && "border-primary border-2 shadow-lg shadow-primary/20"
+                              )}
+                              onClick={() => setSelectedPost(post.id)}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-4">
+                                  <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline">
+                                        {post.post_type === 'TEXT' ? '📝 Texto' : 
+                                         post.post_type === 'IMAGE' ? '🖼️ Imagem' : 
+                                         '🎠 Carrossel'}
+                                      </Badge>
+                                      {selectedPost === post.id && (
+                                        <Badge className="bg-primary">
+                                          <Check className="h-3 w-3 mr-1" />
+                                          Selecionado
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-sm line-clamp-3">
+                                      {post.content || <span className="text-muted-foreground italic">Post sem texto</span>}
+                                    </p>
+                                    {post.image_urls && post.image_urls.length > 0 && (
+                                      <div className="flex gap-2 flex-wrap">
+                                        {post.image_urls.slice(0, 3).map((url, i) => (
+                                          <img
+                                            key={i}
+                                            src={url}
+                                            alt=""
+                                            className="h-16 w-16 object-cover rounded border"
+                                          />
+                                        ))}
+                                        {post.image_urls.length > 3 && (
+                                          <div className="h-16 w-16 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                                            +{post.image_urls.length - 3}
+                                          </div>
+                                        )}
                                       </div>
                                     )}
                                   </div>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                    {errors.post && (
-                      <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.post}
-                      </p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                        {errors.post && (
+                          <p className="text-sm text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {errors.post}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
@@ -645,15 +714,39 @@ export function PeriodicPostWizard({
 
                     {selectedPostData && (
                       <div className="space-y-3">
-                        <Label className="text-base font-semibold">Preview do Post</Label>
-                        <div className="max-w-md mx-auto">
-                          <ThreadsPostPreview
-                            username={selectedAccountData?.username || "username"}
-                            profilePicture={selectedAccountData?.profile_picture_url || undefined}
-                            content={selectedPostData.content || ""}
-                            images={selectedPostData.image_urls}
-                            timestamp={new Date().toISOString()}
-                          />
+                        <Label className="text-base font-semibold">Configuração do Post</Label>
+                        <div className="p-4 rounded-lg border bg-muted/30">
+                          <div className="flex items-center gap-3 mb-3">
+                            <Badge variant="outline" className="text-base">
+                              {selectedPostData.post_type === 'TEXT' ? '📝 Texto' : 
+                               selectedPostData.post_type === 'IMAGE' ? '🖼️ Imagem' : 
+                               '🎠 Carrossel'}
+                            </Badge>
+                            {useRandomPost && (
+                              <Badge variant="secondary">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                Post Aleatório
+                              </Badge>
+                            )}
+                          </div>
+                          {!useRandomPost && (
+                            <div className="max-w-md mx-auto mt-4">
+                              <ThreadsPostPreview
+                                username={selectedAccountData?.username || "username"}
+                                profilePicture={selectedAccountData?.profile_picture_url || undefined}
+                                content={selectedPostData.content || ""}
+                                images={selectedPostData.image_urls}
+                                timestamp={new Date().toISOString()}
+                              />
+                            </div>
+                          )}
+                          {useRandomPost && (
+                            <p className="text-sm text-muted-foreground mt-2">
+                              {selectedPostFolder 
+                                ? `O sistema escolherá automaticamente entre ${filteredPosts.length} post(s) da pasta selecionada`
+                                : `O sistema escolherá automaticamente entre ${posts.length} post(s)`}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
