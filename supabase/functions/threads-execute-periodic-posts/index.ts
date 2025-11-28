@@ -137,15 +137,29 @@ Deno.serve(async (req) => {
           }
         }
 
-        // 2. Obter frase (se necessário)
+        // 2. NEW: Check if post_id is set (uses new posts table)
         let phraseContent = "";
+        let imageUrls: string[] = [];
 
-        if (post.post_type !== "image" || post.use_random_phrase || post.specific_phrase_id) {
-          phraseContent = await getPhraseForPost(supabase, post);
+        if (post.post_id) {
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('content, image_urls, post_type')
+            .eq('id', post.post_id)
+            .single();
+
+          if (postData) {
+            phraseContent = postData.content || "";
+            imageUrls = postData.image_urls || [];
+          }
+        } else {
+          // LEGACY: Use old method with phrases/images
+          if (post.post_type !== "image" || post.use_random_phrase || post.specific_phrase_id) {
+            phraseContent = await getPhraseForPost(supabase, post);
+          }
+
+          imageUrls = await getImagesForPost(supabase, post);
         }
-
-        // 3. Obter imagem(ns) (se necessário)
-        const imageUrls = await getImagesForPost(supabase, post);
 
         // 4. Calcular hash do conteúdo
         let contentForHash = "";
