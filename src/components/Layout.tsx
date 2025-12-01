@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun, TrendingUp, ImageIcon, Megaphone, History, Flame } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar, LogOut, Sparkles, Send, Moon, Sun, TrendingUp, ImageIcon, Megaphone, History, Flame, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useEffect, useState } from "react";
@@ -162,6 +162,15 @@ const Layout = ({
           </nav>
           
           <div className="pt-6 space-y-2 border-t border-border/50 mt-auto">
+            <Link to="/settings" className="block">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start hover:bg-accent/10 hover:shadow-md transition-all duration-300 rounded-xl h-12 font-medium text-[14px]"
+              >
+                <Settings className="mr-3 h-5 w-5" />
+                <span>Configurações</span>
+              </Button>
+            </Link>
             <Button 
               variant="ghost" 
               className="w-full justify-start hover:bg-accent/10 hover:shadow-md transition-all duration-300 rounded-xl h-12 font-medium text-[14px]" 
