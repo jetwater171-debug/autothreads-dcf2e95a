@@ -110,22 +110,50 @@ const AccountsOAuth = () => {
     }
   };
 
-  const handleOAuthConnect = () => {
-    const threadsAppId = import.meta.env.VITE_THREADS_APP_ID;
-    const threadsRedirectUri = import.meta.env.VITE_THREADS_REDIRECT_URI;
-    const scope = "threads_basic,threads_content_publish,threads_read_replies,threads_manage_replies,threads_manage_insights";
+  const handleOAuthConnect = async () => {
+    try {
+      // Verificar se o usuário configurou suas credenciais Meta
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
 
-    if (!threadsAppId || !threadsRedirectUri) {
+      const { data: settings, error: settingsError } = await supabase
+        .from("user_settings")
+        .select("threads_app_id, is_meta_configured")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (settingsError && settingsError.code !== 'PGRST116') throw settingsError;
+
+      if (!settings || !settings.is_meta_configured || !settings.threads_app_id) {
+        toast({
+          variant: "destructive",
+          title: "Configure suas credenciais primeiro",
+          description: "Você precisa configurar suas credenciais do Meta em Configurações antes de conectar uma conta.",
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/settings")}
+            >
+              Ir para Configurações
+            </Button>
+          ),
+        });
+        return;
+      }
+
+      const threadsRedirectUri = "https://autothreads.lovable.app/auth/callback";
+      const scope = "threads_basic,threads_content_publish,threads_read_replies,threads_manage_replies,threads_manage_insights";
+
+      const authUrl = `https://threads.net/oauth/authorize?client_id=${settings.threads_app_id}&redirect_uri=${encodeURIComponent(threadsRedirectUri)}&scope=${scope}&response_type=code`;
+      window.location.href = authUrl;
+    } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro de configuração",
-        description: "Credenciais do Threads não configuradas.",
+        title: "Erro",
+        description: error.message,
       });
-      return;
     }
-
-    const authUrl = `https://threads.net/oauth/authorize?client_id=${threadsAppId}&redirect_uri=${encodeURIComponent(threadsRedirectUri)}&scope=${scope}&response_type=code`;
-    window.location.href = authUrl;
   };
 
   const handleAddManual = async (e: React.FormEvent) => {

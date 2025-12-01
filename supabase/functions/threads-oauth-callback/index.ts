@@ -17,12 +17,47 @@ Deno.serve(async (req) => {
       throw new Error('Código de autorização não fornecido');
     }
 
-    const threadsAppId = Deno.env.get('THREADS_APP_ID');
-    const threadsAppSecret = Deno.env.get('THREADS_APP_SECRET');
-    const threadsRedirectUri = Deno.env.get('THREADS_REDIRECT_URI');
+    // Obter usuário autenticado
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Token de autenticação não fornecido');
+    }
 
-    if (!threadsAppId || !threadsAppSecret || !threadsRedirectUri) {
-      throw new Error('Credenciais do Threads não configuradas');
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    // Buscar credenciais do usuário no user_settings
+    const { data: userSettings, error: settingsError } = await supabaseClient
+      .from('user_settings')
+      .select('threads_app_id, threads_app_secret')
+      .eq('user_id', user.id)
+      .single();
+
+    if (settingsError || !userSettings) {
+      throw new Error('Credenciais do Meta não configuradas. Configure em Configurações primeiro.');
+    }
+
+    const threadsAppId = userSettings.threads_app_id;
+    const threadsAppSecret = userSettings.threads_app_secret;
+    const threadsRedirectUri = 'https://autothreads.lovable.app/auth/callback';
+
+    if (!threadsAppId || !threadsAppSecret) {
+      throw new Error('Credenciais do Meta não configuradas');
     }
 
     // Trocar código por token de curta duração
@@ -127,32 +162,8 @@ Deno.serve(async (req) => {
       const profileData = await profileResponse.json();
       username = profileData.username;
       profilePictureUrl = profileData.threads_profile_picture_url;
-      console.log('Username obtido:', username);
+    console.log('Username obtido:', username);
       console.log('Profile picture URL obtida:', profilePictureUrl);
-    }
-
-    // Obter usuário autenticado
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Token de autenticação não fornecido');
-    }
-
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
-
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
-
-    if (!user) {
-      throw new Error('Usuário não autenticado');
     }
 
     console.log('Salvando conta no banco de dados...');

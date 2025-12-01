@@ -358,6 +358,36 @@ export type Database = {
           },
         ]
       }
+      user_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_meta_configured: boolean | null
+          threads_app_id: string | null
+          threads_app_secret: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_meta_configured?: boolean | null
+          threads_app_id?: string | null
+          threads_app_secret?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_meta_configured?: boolean | null
+          threads_app_id?: string | null
+          threads_app_secret?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       warmup_day_posts: {
         Row: {
           content_type: string
