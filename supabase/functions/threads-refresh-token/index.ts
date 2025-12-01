@@ -42,14 +42,28 @@ Deno.serve(async (req) => {
     if (account.token_expires_at && new Date(account.token_expires_at) < new Date()) {
       throw new Error('Token expirado. Reconecte a conta via OAuth.');
     }
+
+    // Buscar credenciais do usuário no user_settings
+    const { data: userSettings, error: settingsError } = await supabase
+      .from('user_settings')
+      .select('threads_app_secret')
+      .eq('user_id', user.id)
+      .single();
+
+    if (settingsError || !userSettings || !userSettings.threads_app_secret) {
+      throw new Error('Credenciais do Meta não configuradas. Configure em Configurações.');
+    }
+
+    const threadsAppSecret = userSettings.threads_app_secret;
     
     console.log('📡 Chamando API do Threads para renovar token...');
     
-    // Renovar token na API do Threads
+    // Renovar token na API do Threads (usando o app_secret do usuário)
     const refreshResponse = await fetch(
-      `https://graph.threads.net/refresh_access_token?` +
+      `https://graph.threads.net/access_token?` +
       `grant_type=th_refresh_token&` +
-      `access_token=${account.access_token}`,
+      `access_token=${account.access_token}&` +
+      `client_secret=${threadsAppSecret}`,
       { method: 'GET' }
     );
     
