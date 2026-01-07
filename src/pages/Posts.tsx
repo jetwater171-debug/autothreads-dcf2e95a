@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Upload, X, FolderInput as FolderInputIcon, Edit, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ThreadsPostPreview } from "@/components/ThreadsPostPreview";
@@ -32,6 +33,7 @@ interface Post {
   image_urls: string[];
   folder_id: string | null;
   created_at: string;
+  is_spoiler?: boolean;
 }
 
 interface Folder {
@@ -57,6 +59,7 @@ export default function Posts() {
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [postToMove, setPostToMove] = useState<Post | null>(null);
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null);
+  const [isSpoiler, setIsSpoiler] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -195,6 +198,7 @@ export default function Posts() {
             content: content.trim() || null,
             post_type: postType,
             image_urls: uploadedUrls.length > 0 ? uploadedUrls : editingPost.image_urls,
+            is_spoiler: isSpoiler,
             updated_at: new Date().toISOString(),
           })
           .eq("id", editingPost.id);
@@ -213,6 +217,7 @@ export default function Posts() {
             content: content.trim() || null,
             post_type: postType,
             image_urls: uploadedUrls,
+            is_spoiler: isSpoiler,
           });
 
         if (error) throw error;
@@ -243,12 +248,14 @@ export default function Posts() {
     setImageFiles([]);
     setImageUrls([]);
     setEditingPost(null);
+    setIsSpoiler(false);
   };
 
   const handleEdit = (post: Post) => {
     setEditingPost(post);
     setContent(post.content || "");
     setImageUrls(post.image_urls);
+    setIsSpoiler(post.is_spoiler || false);
     setIsDialogOpen(true);
   };
 
@@ -545,6 +552,25 @@ export default function Posts() {
                   )}
                 </div>
               </div>
+
+              {/* Opção de Spoiler - só aparece quando há imagens */}
+              {imageUrls.length > 0 && (
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <div className="space-y-0.5">
+                    <label htmlFor="spoiler-toggle-posts" className="text-sm font-medium cursor-pointer">
+                      Marcar como Spoiler
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      A mídia ficará borrada até o usuário clicar
+                    </p>
+                  </div>
+                  <Switch
+                    id="spoiler-toggle-posts"
+                    checked={isSpoiler}
+                    onCheckedChange={setIsSpoiler}
+                  />
+                </div>
+              )}
 
               <div className="pt-2">
                 <p className="text-sm font-medium text-muted-foreground">

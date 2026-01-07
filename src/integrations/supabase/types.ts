@@ -273,6 +273,7 @@ export type Database = {
           folder_id: string | null
           id: string
           image_urls: string[] | null
+          is_spoiler: boolean | null
           post_type: string
           updated_at: string
           user_id: string
@@ -283,6 +284,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           image_urls?: string[] | null
+          is_spoiler?: boolean | null
           post_type: string
           updated_at?: string
           user_id: string
@@ -293,6 +295,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           image_urls?: string[] | null
+          is_spoiler?: boolean | null
           post_type?: string
           updated_at?: string
           user_id?: string
