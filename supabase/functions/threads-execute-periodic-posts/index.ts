@@ -141,18 +141,20 @@ Deno.serve(async (req) => {
         let phraseContent = "";
         let imageUrls: string[] = [];
         let actualPostType = post.post_type;
+        let isSpoiler = false;
 
         // Se for post específico, buscar pelo post_id
         if (post.post_type === 'specific' && post.post_id) {
           const { data: postData } = await supabase
             .from('posts')
-            .select('content, image_urls, post_type')
+            .select('content, image_urls, post_type, is_spoiler')
             .eq('id', post.post_id)
             .single();
 
           if (postData) {
             phraseContent = postData.content || "";
             imageUrls = postData.image_urls || [];
+            isSpoiler = postData.is_spoiler || false;
             // Determinar tipo real do post baseado no conteúdo
             if (imageUrls.length > 1) {
               actualPostType = 'carousel';
@@ -162,12 +164,12 @@ Deno.serve(async (req) => {
               actualPostType = 'text';
             }
           }
-        } 
+        }
         // Se for post aleatório, buscar um post aleatório
         else if (post.post_type === 'random') {
           let query = supabase
             .from('posts')
-            .select('content, image_urls, post_type')
+            .select('content, image_urls, post_type, is_spoiler')
             .eq('user_id', post.user_id);
 
           // TODO: Filtrar por pasta se configurado (random_post_folder_id)
@@ -178,6 +180,7 @@ Deno.serve(async (req) => {
             const randomPost = randomPosts[Math.floor(Math.random() * randomPosts.length)];
             phraseContent = randomPost.content || "";
             imageUrls = randomPost.image_urls || [];
+            isSpoiler = randomPost.is_spoiler || false;
             // Determinar tipo real do post baseado no conteúdo
             if (imageUrls.length > 1) {
               actualPostType = 'carousel';
@@ -267,6 +270,7 @@ Deno.serve(async (req) => {
             imageUrls,
             postType: actualPostType,
             userId: post.user_id,
+            isSpoiler: isSpoiler,
           },
           `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
           3

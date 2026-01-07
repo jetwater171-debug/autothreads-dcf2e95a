@@ -13,9 +13,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { accountId, text, imageUrls, postType, userId } = await req.json();
+    const { accountId, text, imageUrls, postType, userId, isSpoiler } = await req.json();
 
-    console.log(`📥 Recebido: accountId=${accountId}, postType=${postType}, userId=${userId}`);
+    console.log(`📥 Recebido: accountId=${accountId}, postType=${postType}, userId=${userId}, isSpoiler=${isSpoiler}`);
 
     if (!accountId) throw new Error('accountId é obrigatório');
 
@@ -87,6 +87,9 @@ Deno.serve(async (req) => {
     if (text) {
       console.log(`📝 Texto: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
     }
+    if (isSpoiler) {
+      console.log(`⚠️ Post marcado como SPOILER`);
+    }
 
     //
     // ================================
@@ -103,7 +106,7 @@ Deno.serve(async (req) => {
       const childrenIds: string[] = [];
 
       for (const imageUrl of imageUrls) {
-        const childReq = {
+        const childReq: Record<string, any> = {
           access_token: account.access_token,
           media_type: "IMAGE",
           upload_type: "external",
@@ -131,12 +134,17 @@ Deno.serve(async (req) => {
       }
 
       // Criar o container final com todos os children
-      const carouselBody = {
+      const carouselBody: Record<string, any> = {
         access_token: account.access_token,
         media_type: "CAROUSEL",
         children: childrenIds,
         text: text ?? ""
       };
+
+      // Adicionar flag de spoiler se ativado
+      if (isSpoiler) {
+        carouselBody.is_spoiler_media = true;
+      }
 
       const createResponse = await fetch(
         `https://graph.threads.net/v1.0/${account.account_id}/threads`,
@@ -161,13 +169,18 @@ Deno.serve(async (req) => {
     // POST DE IMAGEM
     //
     else if (postType === "image") {
-      const body = {
+      const body: Record<string, any> = {
         access_token: account.access_token,
         media_type: "IMAGE",
         upload_type: "external",
         image_url: imageUrls[0],
         text: text ?? ""
       };
+
+      // Adicionar flag de spoiler se ativado
+      if (isSpoiler) {
+        body.is_spoiler_media = true;
+      }
 
       const createResponse = await fetch(
         `https://graph.threads.net/v1.0/${account.account_id}/threads`,
@@ -192,7 +205,7 @@ Deno.serve(async (req) => {
     // POST APENAS TEXTO
     //
     else {
-      const body = {
+      const body: Record<string, any> = {
         access_token: account.access_token,
         media_type: "TEXT",
         text: text

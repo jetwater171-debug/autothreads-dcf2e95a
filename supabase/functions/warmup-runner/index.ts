@@ -74,10 +74,11 @@ Deno.serve(async (req) => {
         const imageUrls: string[] = [];
 
         // NEW: Check if post_id is set (uses new posts table)
+        let isSpoiler = false;
         if (dayPost.post_id) {
           const { data: postData } = await supabase
             .from('posts')
-            .select('content, image_urls, post_type')
+            .select('content, image_urls, post_type, is_spoiler')
             .eq('id', dayPost.post_id)
             .single();
 
@@ -86,6 +87,7 @@ Deno.serve(async (req) => {
             if (postData.image_urls) {
               imageUrls.push(...postData.image_urls);
             }
+            isSpoiler = postData.is_spoiler || false;
           }
         } else {
           // LEGACY: Use old method with phrases/images
@@ -168,6 +170,7 @@ Deno.serve(async (req) => {
             postType: dayPost.content_type,
             userId: scheduledPost.warmup_runs.warmup_sequences.user_id,
             warmupRunId: scheduledPost.run_id,
+            isSpoiler: isSpoiler,
           },
         });
 

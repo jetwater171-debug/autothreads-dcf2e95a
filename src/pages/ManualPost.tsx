@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Loader2, X, Upload } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { WarmingStatusBadge } from "@/components/WarmingStatusBadge";
 import { WarmingAccountDialog } from "@/components/WarmingAccountDialog";
@@ -33,6 +34,7 @@ const ManualPost = () => {
   const [loading, setLoading] = useState(false);
   const [showWarmingDialog, setShowWarmingDialog] = useState(false);
   const [pendingAccountId, setPendingAccountId] = useState("");
+  const [isSpoiler, setIsSpoiler] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -232,6 +234,7 @@ const ManualPost = () => {
           text: text.trim(),
           imageUrls: uploadedImages,
           postType: postType,
+          isSpoiler: isSpoiler,
         },
       });
 
@@ -250,6 +253,7 @@ const ManualPost = () => {
       setUploadedImages([]);
       setPostType('text');
       setSelectedAccount("");
+      setIsSpoiler(false);
     } catch (error: any) {
       console.error("Error creating post:", error);
       toast({
@@ -450,6 +454,25 @@ const ManualPost = () => {
                   )}
                 </div>
               </>
+            )}
+
+            {/* Opção de Spoiler */}
+            {(postType === 'image' || postType === 'carousel') && (
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                <div className="space-y-0.5">
+                  <Label htmlFor="spoiler-toggle" className="text-base font-medium cursor-pointer">
+                    Marcar como Spoiler
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    A mídia ficará borrada até o usuário clicar para revelar
+                  </p>
+                </div>
+                <Switch
+                  id="spoiler-toggle"
+                  checked={isSpoiler}
+                  onCheckedChange={setIsSpoiler}
+                />
+              </div>
             )}
 
             <Button 
